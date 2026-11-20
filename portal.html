@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pincelada Anatômica — Portal do Mentorado</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=DM+Sans:wght@400;500;700&display=swap">
+<!--DADOS-->
+<script>
+/* Modelo fixo do portal. Os dados de cada cliente ficam em dados.js. */
+const D = window.DADOS || {};
+const CONFIG = {
+  mentorado: (D.cliente || {}).mentorado || '', empresa: (D.cliente || {}).empresa || '', mentor: (D.cliente || {}).mentor || '',
+  tipo: (D.cliente || {}).tipo || 'produtos', primeiroEncontro: (D.cliente || {}).primeiroEncontro || '',
+  cores: (D.cliente || {}).cores || { escuro: '#17181D', claro: '#F6F3EE', claro2: '#ECE6DC', destaque: '#B8894A', destaqueTexto: '#835C28' },
+  endpoint: D.endpoint || '',
+  perspectivas: (D.aplicacao || {}).caminhos || [], formatos: (D.aplicacao || {}).formatos || [],
+  doMentor: D.mentor || {}, briefing: D.briefing || { extras: [], remover: [] }, apresentacao: D.apresentacao || { liberada: false }
+};
+</script>
+<style>
+  :root { --escuro:#17181D; --claro:#F6F3EE; --claro2:#ECE6DC; --destaque:#B8894A; --destaque-texto:#835C28; --texto:#4A4A52; --linha:#D9D1C3; --branco:#FCFBF8; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--claro); color:var(--escuro); font-family:'DM Sans', Arial, sans-serif; font-size:16px; line-height:1.5; }
+  h1,h2,.serif { font-family:'Cormorant Garamond', Georgia, serif; font-weight:600; }
+  a { color:inherit; }
+  header.topo { background:var(--escuro); color:var(--claro); padding:28px 24px 20px; }
+  .topo-in { max-width:1080px; margin:0 auto; display:flex; justify-content:space-between; align-items:flex-end; gap:16px; flex-wrap:wrap; }
+  .eyebrow { font-size:12px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--destaque-texto); }
+  header .eyebrow { color:var(--destaque); }
+  header h1 { margin:6px 0 0; font-size:34px; line-height:1.1; }
+  .salvo { font-size:13px; color:#CFCBC3; }
+
+  nav.fluxo { background:var(--escuro); padding:8px 24px 28px; overflow-x:auto; }
+  .fluxo-in { max-width:1080px; margin:0 auto; display:flex; gap:12px; min-width:760px; }
+  .mov { flex:1; border:1px solid #33343B; border-radius:12px; padding:12px 12px 14px; }
+  .mov-nome { font-size:11px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:#A9A59D; margin-bottom:10px; }
+  .nos { display:flex; align-items:flex-start; }
+  .no { flex:1; display:flex; flex-direction:column; align-items:center; text-align:center; cursor:pointer; background:none; border:0; color:var(--claro); padding:0; font:inherit; position:relative; }
+  .no::after { content:""; position:absolute; top:22px; left:calc(50% + 24px); right:calc(-50% + 24px); height:2px; background:#3A3B42; }
+  .no:last-child::after { display:none; }
+  .circ { width:44px; height:44px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:15px; border:2px solid #4A4B53; background:var(--escuro); position:relative; z-index:1; }
+  .no.andamento .circ { border-color:var(--destaque); color:var(--destaque); }
+  .no.feita .circ { background:var(--destaque); border-color:var(--destaque); color:var(--escuro); }
+  .no.ativa .circ { box-shadow:0 0 0 4px rgba(184,137,74,.35); }
+  .no-nome { font-size:12.5px; margin-top:8px; line-height:1.25; }
+  .no-pct { font-size:11px; color:#A9A59D; }
+  .no.ativa .no-nome { font-weight:700; }
+  .resumo-btn { align-self:center; flex:0 0 auto; background:none; border:1px solid var(--destaque); color:var(--destaque); border-radius:999px; padding:10px 16px; font:inherit; font-weight:700; font-size:13px; cursor:pointer; }
+
+  main { max-width:900px; margin:0 auto; padding:40px 24px 80px; }
+  .etapa-cab h1 { font-size:48px; margin:6px 0 8px; line-height:1.05; }
+  .etapa-cab .num { color:var(--destaque); }
+  .objetivo { font-size:19px; color:var(--texto); margin:0 0 18px; }
+  .legenda { display:flex; flex-wrap:wrap; gap:8px; margin:0 0 22px; font-size:13px; color:var(--texto); align-items:center; }
+  .barra-geral { display:flex; align-items:center; gap:12px; margin-bottom:22px; font-size:13px; color:var(--texto); }
+  .barra { flex:1; height:6px; background:var(--claro2); border-radius:6px; overflow:hidden; }
+  .barra > div { height:100%; background:var(--destaque); width:0; transition:width .3s; }
+
+  details.modulo { background:var(--branco); border:1px solid var(--linha); border-radius:16px; margin-bottom:14px; }
+  details.modulo > summary { list-style:none; cursor:pointer; padding:20px 24px; display:flex; justify-content:space-between; align-items:center; gap:12px; }
+  details.modulo > summary::-webkit-details-marker { display:none; }
+  .mod-tit { font-family:'Cormorant Garamond', Georgia, serif; font-size:26px; font-weight:600; line-height:1.1; }
+  .mod-num { color:var(--destaque-texto); }
+  .mod-pct { font-size:13px; color:var(--texto); white-space:nowrap; }
+  .seta { display:inline-block; transition:transform .2s; margin-left:8px; }
+  details[open] .seta { transform:rotate(90deg); }
+  .mod-corpo { padding:0 24px 24px; }
+  .teoria { background:var(--claro2); border-radius:12px; padding:14px 18px; margin-bottom:22px; font-size:14.5px; color:var(--texto); }
+  .teoria p { margin:0 0 6px; }
+  .teoria p:last-child { margin:0; }
+  .teoria b { color:var(--escuro); }
+
+  .campo { margin-bottom:22px; }
+  .lbl { display:flex; gap:8px; align-items:baseline; flex-wrap:wrap; font-weight:700; font-size:15px; margin-bottom:8px; }
+  .dica { font-size:13.5px; color:var(--texto); margin:-4px 0 8px; }
+  .badge { font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; border-radius:999px; padding:2px 9px; white-space:nowrap; }
+  .badge.P { background:var(--claro2); color:var(--escuro); }
+  .badge.J { background:var(--destaque); color:var(--escuro); }
+  .badge.M { background:var(--escuro); color:var(--claro); }
+  .sub { font-family:'Cormorant Garamond', Georgia, serif; font-size:22px; font-weight:600; margin:28px 0 12px; padding-top:18px; border-top:1px solid var(--linha); }
+  input[type=text], textarea, select { width:100%; font:inherit; font-size:15px; color:var(--escuro); background:var(--claro); border:1px solid var(--linha); border-radius:10px; padding:10px 12px; }
+  textarea { min-height:88px; resize:vertical; }
+  input:focus, textarea:focus, select:focus { outline:2px solid var(--destaque); outline-offset:1px; border-color:var(--destaque); }
+  .lista { display:grid; gap:8px; }
+  .lista.c3 { grid-template-columns:repeat(3,1fr); }
+  .lista.c2 { grid-template-columns:repeat(2,1fr); }
+  .chips { display:flex; flex-wrap:wrap; gap:8px; }
+  .chip { border:1px solid var(--linha); background:var(--claro); border-radius:999px; padding:8px 14px; cursor:pointer; font:inherit; font-size:14px; color:var(--escuro); }
+  .chip.on { background:var(--escuro); color:var(--claro); border-color:var(--escuro); }
+  .slider { display:flex; align-items:center; gap:14px; }
+  .slider input { flex:1; accent-color:var(--destaque); }
+  .slider .val { font-family:'Cormorant Garamond', Georgia, serif; font-size:30px; font-weight:700; color:var(--destaque-texto); min-width:44px; text-align:right; }
+  .grade { width:100%; border-collapse:separate; border-spacing:0 8px; }
+  .grade th { font-size:12px; text-transform:uppercase; letter-spacing:.06em; color:var(--destaque-texto); text-align:left; padding:0 6px; font-weight:700; }
+  .grade td { padding:0 6px; vertical-align:top; }
+  .grade td.rot { font-weight:700; font-size:14px; padding-top:10px; white-space:nowrap; }
+  .linha-card { border:1px solid var(--linha); border-radius:12px; padding:14px; margin-bottom:10px; background:var(--claro); display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .linha-card .full { grid-column:1 / -1; }
+  .linha-card label { display:block; font-size:12.5px; font-weight:700; color:var(--texto); margin-bottom:4px; }
+  .linha-card input, .linha-card textarea { background:var(--branco); }
+  .linha-card textarea { min-height:60px; }
+  .linha-card .n { grid-column:1 / -1; font-weight:700; font-size:14px; }
+  .mentor { border:1px dashed var(--escuro); border-radius:12px; padding:14px 18px; background:var(--branco); }
+  .mentor ul { margin:6px 0 0; padding-left:20px; }
+  .mentor li { margin-bottom:4px; font-size:14.5px; }
+  .mentor .vazio { font-size:14px; }
+  .tag-prop { font-size:12px; font-weight:500; color:var(--texto); }
+  .prop-texto { white-space:pre-wrap; font-size:15.5px; margin:6px 0 0; }
+  .prop-porque { margin-top:10px; background:var(--claro2); border-radius:10px; padding:10px 14px; font-size:14px; color:var(--texto); white-space:pre-wrap; }
+  .prop-porque b { color:var(--escuro); }
+  .blocos { margin:8px 0 0; padding-left:20px; }
+  .blocos li { margin-bottom:6px; font-size:14.5px; white-space:pre-wrap; }
+  .guerra { border-top:1px solid var(--linha); padding-top:10px; margin-top:10px; }
+  .guerra p { margin:4px 0 0; font-size:14.5px; }
+  .sugestao { background:var(--claro2); border-radius:10px; padding:12px 16px; font-size:14.5px; color:var(--texto); margin-top:4px; }
+  .sugestao b { color:var(--escuro); }
+  .card-persp { border:1px solid var(--linha); border-radius:12px; padding:16px; margin-bottom:12px; background:var(--claro); }
+  .card-persp.escolhido { border:2px solid var(--destaque); }
+  .card-persp h3 { margin:0 0 10px; font-size:17px; display:flex; justify-content:space-between; align-items:center; gap:10px; }
+  .duo { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:8px; }
+  .card-persp label.mini { display:block; font-size:12.5px; font-weight:700; color:var(--texto); margin-bottom:4px; }
+  .card-persp textarea { min-height:60px; background:var(--branco); }
+  .card-persp input[type=text] { background:var(--branco); }
+  .escolher { font-size:13px; font-weight:500; display:flex; align-items:center; gap:6px; cursor:pointer; }
+  .total { font-weight:700; color:var(--destaque-texto); }
+
+  .acoes { display:flex; flex-wrap:wrap; gap:10px; margin-top:28px; align-items:center; }
+  .btn { font:inherit; font-weight:700; font-size:14.5px; border-radius:999px; padding:12px 20px; cursor:pointer; border:1px solid var(--escuro); background:var(--escuro); color:var(--claro); text-decoration:none; display:inline-block; }
+  .btn.sec { background:transparent; color:var(--escuro); }
+  .btn.ouro { background:var(--destaque); border-color:var(--destaque); color:var(--escuro); }
+  .espaco { flex:1; }
+  .aviso { font-size:13px; color:var(--texto); margin-top:10px; }
+  .boas h1 { font-size:52px; margin:8px 0 12px; line-height:1.05; }
+  .res-bloco { background:var(--branco); border:1px solid var(--linha); border-radius:14px; padding:20px 24px; margin-bottom:14px; }
+  .res-bloco h3 { margin:0 0 10px; font-size:18px; }
+  .res-linha { font-size:14.5px; margin:0 0 8px; color:var(--texto); white-space:pre-wrap; }
+  .res-linha b { color:var(--escuro); }
+  .vazio { color:#8A857C; font-style:italic; }
+  .toast { position:fixed; left:50%; bottom:24px; transform:translateX(-50%); background:var(--escuro); color:var(--claro); padding:10px 18px; border-radius:999px; font-size:14px; opacity:0; transition:opacity .2s; pointer-events:none; }
+  .toast.on { opacity:1; }
+
+  nav.abas { background:var(--escuro); border-top:1px solid #2A2B31; }
+  .abas-in { max-width:1080px; margin:0 auto; display:flex; gap:6px; padding:10px 24px; overflow-x:auto; }
+  .aba { color:#CFCBC3; text-decoration:none; font-size:14px; font-weight:700; padding:9px 16px; border-radius:999px; white-space:nowrap; border:1px solid transparent; }
+  .aba .n { color:var(--destaque); margin-right:6px; }
+  .aba.on { background:var(--claro); color:var(--escuro); }
+  .aba.on .n { color:var(--destaque-texto); }
+  .aba:not(.on):hover { border-color:#4A4B53; }
+  nav.fluxo[hidden] { display:none; }
+  main.largo { max-width:1180px; }
+  .palco { position:relative; width:100%; aspect-ratio:16/9; overflow:hidden; border-radius:14px; box-shadow:0 1px 0 var(--linha); background:var(--escuro); }
+  .palco-in { position:absolute; left:0; top:0; width:1920px; height:1080px; transform-origin:0 0; }
+  .palco-in { line-height:1.2; font-size:32px; color:var(--escuro); }
+  .palco-in * { margin:0; }
+  .palco-in > section { width:1920px; height:1080px; box-sizing:border-box; position:relative; overflow:hidden; }
+  .palco-in table { width:100%; border-collapse:collapse; }
+  .palco-in p, .palco-in h1, .palco-in h2, .palco-in h3, .palco-in td, .palco-in th { overflow-wrap:break-word; }
+  .controles { display:flex; align-items:center; justify-content:center; gap:14px; margin-top:16px; }
+  .contador { font-size:14px; color:var(--texto); min-width:70px; text-align:center; }
+  .miniaturas { display:flex; gap:6px; flex-wrap:wrap; justify-content:center; margin-top:14px; }
+  .mini-dot { width:10px; height:10px; border-radius:50%; background:var(--linha); border:0; padding:0; cursor:pointer; }
+  .mini-dot.on { background:var(--destaque); }
+  .portal-cards { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin:28px 0; }
+  .pcard { background:var(--branco); border:1px solid var(--linha); border-radius:16px; padding:22px; text-decoration:none; color:inherit; display:flex; flex-direction:column; gap:8px; }
+  .pcard:hover { border-color:var(--destaque); }
+  .pcard .n { font-family:'Cormorant Garamond', Georgia, serif; font-size:40px; font-weight:700; color:var(--destaque-texto); line-height:1; }
+  .pcard h3 { margin:0; font-size:19px; }
+  .pcard p { margin:0; color:var(--texto); font-size:14.5px; }
+  .pcard .pct { font-size:13px; font-weight:700; color:var(--destaque-texto); }
+  .parte { background:var(--branco); border:1px solid var(--linha); border-radius:16px; padding:22px 24px; margin-bottom:14px; }
+  .parte h2 { margin:0 0 14px; font-size:26px; }
+  @media (max-width:640px) { .portal-cards { grid-template-columns:1fr; } .palco { border-radius:10px; } }
+  @media (max-width:640px) {
+    .lista.c3, .lista.c2, .passos, .duo, .linha-card { grid-template-columns:1fr; }
+    .etapa-cab h1, .boas h1 { font-size:38px; }
+    details.modulo > summary, .mod-corpo { padding-left:16px; padding-right:16px; }
+    .grade, .grade tbody, .grade tr, .grade td { display:block; width:100%; }
+    .grade thead { display:none; }
+    .grade tr { margin-bottom:12px; }
+    .grade td { padding:3px 0; }
+  }
+.palco-in section {
+  --escuro: #17181D;      
+  --claro: #F6F3EE;       
+  --claro2: #ECE6DC;      
+  --destaque: #B8894A;    
+  --destaque-texto: #835C28; 
+  --texto: #4A4A52;       
+  --texto-claro: #CFCBC3; 
+}
+.palco-in section {
+  padding: 128px 128px 160px;
+  background: var(--claro);
+  color: var(--escuro);
+  font-family: 'DM Sans', Arial, sans-serif;
+  display: flex;
+  flex-direction: column;
+}
+.palco-in section.escuro { background: var(--escuro); color: var(--claro); }
+.palco-in section.alt { background: var(--claro2); }
+.palco-in section.cor { background: var(--destaque); color: var(--escuro); }
+.palco-in h1 { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 132px; font-weight: 600; line-height: 1.0; margin: 0; }
+.palco-in h2 { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 80px; font-weight: 600; line-height: 1.05; margin: 0; }
+.palco-in h3 { font-size: 32px; font-weight: 700; margin: 0; line-height: 1.2; }
+.palco-in p { font-size: 28px; line-height: 1.45; margin: 0; color: var(--texto); }
+.palco-in section.escuro p { color: var(--texto-claro); }
+.palco-in section.cor p { color: var(--escuro); }
+.palco-in p.eyebrow { font-size: 24px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--destaque-texto); margin-bottom: 28px; }
+.palco-in section.escuro p.eyebrow { color: var(--destaque); }
+.palco-in section.cor p.eyebrow { color: var(--escuro); }
+.palco-in p.lead { font-size: 32px; line-height: 1.45; max-width: 1180px; margin-top: 40px; }
+.palco-in p.tese { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 96px; font-weight: 600; line-height: 1.08; color: var(--escuro); max-width: 1500px; }
+.palco-in section.escuro p.tese { color: var(--claro); }
+.palco-in .rodape { position: absolute; left: 128px; bottom: 64px; width: 1664px; display: flex; justify-content: space-between; }
+.palco-in .rodape p { font-size: 24px; color: var(--texto); }
+.palco-in section.escuro .rodape p { color: var(--texto-claro); }
+.palco-in .capa-topo { flex: 1; }
+.palco-in .capa-linha { width: 120px; height: 4px; background: var(--destaque); margin: 48px 0; }
+.palco-in .cols { display: flex; gap: 40px; margin-top: 64px; }
+.palco-in .col { flex: 1; display: flex; flex-direction: column; gap: 20px; border-top: 3px solid var(--destaque); padding-top: 28px; }
+.palco-in .col p { font-size: 26px; }
+.palco-in .col .passo { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 64px; font-weight: 600; color: var(--destaque); line-height: 1; }
+.palco-in .mini { border: 2px solid var(--claro2); background: var(--claro); border-radius: 12px; padding: 20px 24px; }
+.palco-in section.alt .mini { border-color: #D9D1C3; }
+.palco-in .mini p { font-size: 24px; line-height: 1.35; }
+.palco-in .mini h3 { font-size: 28px; }
+.palco-in .etapa { display: grid; grid-template-columns: 600px 1fr; gap: 96px; flex: 1; }
+.palco-in .etapa-esq { display: flex; flex-direction: column; }
+.palco-in .etapa-esq .num { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 200px; font-weight: 600; line-height: 0.9; color: var(--destaque); margin-bottom: 24px; }
+.palco-in .etapa-esq p.obj { margin-top: 32px; font-size: 30px; }
+.palco-in .etapa-dir { display: flex; flex-direction: column; gap: 40px; justify-content: center; }
+.palco-in .bloco { border-top: 2px solid var(--destaque); padding-top: 20px; display: flex; flex-direction: column; gap: 10px; }
+.palco-in .bloco p { font-size: 26px; }
+.palco-in .bloco h3 { font-size: 24px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--destaque-texto); }
+.palco-in .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; margin-top: 44px; }
+.palco-in .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; margin-top: 44px; }
+.palco-in .mod { border: 2px solid #D9D1C3; border-radius: 14px; padding: 24px 28px; display: flex; flex-direction: column; gap: 8px; background: #FCFBF8; }
+.palco-in .mod h3 { font-size: 30px; margin-bottom: 4px; }
+.palco-in .mod p { font-size: 24px; line-height: 1.35; }
+.palco-in .mod .rot { font-weight: 700; color: var(--destaque-texto); }
+.palco-in .col .autor { font-size: 24px; color: var(--destaque); font-weight: 700; }
+.palco-in p.nota { font-size: 24px; margin-top: 32px; }
+.palco-in table { border-collapse: collapse; width: 100%; margin-top: 48px; }
+.palco-in th { font-size: 24px; text-align: left; padding: 14px 20px; color: var(--escuro); border-bottom: 3px solid var(--destaque); }
+.palco-in td { font-size: 24px; padding: 12px 20px; color: var(--texto); border-bottom: 1px solid #D9D1C3; }
+.palco-in td.sem { font-weight: 700; color: var(--escuro); width: 220px; }
+.palco-in section.escuro th { color: var(--claro); }
+.palco-in section.escuro td { color: var(--texto-claro); border-bottom-color: #3A3B42; }
+.palco-in section.escuro td.sem { color: var(--claro); }
+.palco-in .tab-escura td.sem { width: 400px; }
+</style>
+</head>
+<body>
+<header class="topo"><div class="topo-in">
+  <div><div class="eyebrow">Pincelada Anatômica · Portal do Mentorado</div><h1 id="tituloTopo"></h1></div>
+  <div class="salvo" id="salvo">Tudo o que você escreve é salvo automaticamente</div>
+</div></header>
+<nav class="abas" aria-label="Portal"><div class="abas-in">
+  <a class="aba" href="#inicio" data-aba="inicio">Início</a>
+  <a class="aba" href="#briefing" data-aba="briefing"><span class="n">1</span>Briefing</a>
+  <a class="aba" href="#apresentacao" data-aba="apresentacao"><span class="n">2</span>Apresentação</a>
+  <a class="aba" href="#etapa-1" data-aba="aplicacao"><span class="n">3</span>Aplicação</a>
+</div></nav>
+<nav class="fluxo" aria-label="Etapas da mentoria"><div class="fluxo-in" id="fluxo"></div></nav>
+<main id="main"></main>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+(function () {
+  const C = CONFIG;
+  const r = document.documentElement.style;
+  r.setProperty('--escuro', C.cores.escuro); r.setProperty('--claro', C.cores.claro);
+  r.setProperty('--claro2', C.cores.claro2); r.setProperty('--destaque', C.cores.destaque);
+  r.setProperty('--destaque-texto', C.cores.destaqueTexto);
+  document.getElementById('tituloTopo').textContent = C.empresa;
+
+  const MOVS = ['Ler a essência', 'Construir a ponte', 'Empacotar para o mercado'];
+  const NIVEL = ['Baixo', 'Médio', 'Alto'];
+  const AREAS = ['Atração', 'Conversão', 'Atendimento', 'Entrega', 'Recompra'];
+  const DIAS = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'];
+  const QUEM = { P: 'Você', J: 'Juntos no encontro', M: 'Mentor' };
+  const DICA_FORMATO = {
+    'Bio e perfil': 'Quem você é, para quem, o que entrega e a chamada. Até 150 caracteres.',
+    'Stories': 'Uma sequência de 5 a 8 telas: conexão, conteúdo, prova e oferta.',
+    'Reels': 'Gancho nos primeiros segundos, desenvolvimento e chamada. Escreva 3 roteiros.',
+    'Criativos de anúncio': 'Uma ideia por peça e uma oferta clara. Escreva 3 criativos com ganchos diferentes.',
+    'Vídeo longo': 'Uma aula ou entrevista que mostre autoridade. Escreva o roteiro em tópicos.',
+    'VSL': 'Gancho, problema, história, solução, prova, oferta, garantia e chamada.',
+    'WhatsApp': 'Boas-vindas, perguntas de qualificação, apresentação da oferta, objeções e retorno.',
+    'Página ou site': 'Promessa, benefícios, prova, oferta e chamada no início da página.',
+    'Marketing de guerrilha': '2 ações criativas de baixo custo e alto impacto local, com o plano de cada uma.'
+  };
+
+  /* ---------- conteúdo das etapas ---------- */
+  const STAGES = [
+    { id: 1, mov: 0, semana: 'Semana 1', nome: 'Imersão', objetivo: 'Entender quem você é, o que tem de mais forte e o que, por dentro, te impede de ocupar um lugar maior.', mods: [
+      { n: '1.1', nome: 'Fase de vida', conceito: 'A vida acontece em ciclos. A estratégia certa depende da fase em que você está.', base: 'Leitura da trajetória pelos marcos de vida: picos, quedas e viradas revelam padrões de decisão.', fields: [
+        { type: 'chips', key: 'fase', quem: 'P', label: 'Em que fase você está hoje?', options: ['Começando', 'Crescendo', 'Estagnado', 'Recomeçando', 'Em transição'] },
+        { type: 'tabela', key: 'marcos', quem: 'P', label: 'Linha do Tempo da Vida', dica: 'Liste de 6 a 8 marcos da sua vida, em ordem.', rows: 8, cols: [{ n: 'Ano' }, { n: 'O que aconteceu' }, { n: 'O que decidi ou aprendi' }] }
+      ] },
+      { n: '1.2', nome: 'Forças, habilidades e dons', conceito: 'Desenvolver os talentos naturais rende mais do que corrigir fraquezas.', base: 'Forças de Caráter (Peterson e Seligman, 2004), com teste gratuito em viacharacter.org · Janela de Johari (Luft e Ingham, 1955).', fields: [
+        { type: 'lista', key: 'via', quem: 'P', label: 'Suas 5 forças principais no teste VIA', n: 5, ph: 'Força' },
+        { type: 'tabela', key: 'pesq5', quem: 'P', label: 'Pesquisa dos 5', dica: 'Pergunte a cinco pessoas próximas e anote o que disseram.', rows: 5, cols: [{ n: 'Pessoa' }, { n: 'Em que eu sou bom?' }, { n: 'Por que me procuraria?' }, { n: 'O que eu deveria fazer mais?' }] },
+        { type: 'lista', key: 'virtudes', quem: 'J', label: 'Suas 3 virtudes confirmadas', n: 3, ph: 'Virtude' },
+        { type: 'lista', key: 'habilidades', quem: 'J', label: 'Suas 3 habilidades confirmadas', n: 3, ph: 'Habilidade' },
+        { type: 'area', key: 'dons', quem: 'J', label: 'Seus dons', dica: 'O que você faz com naturalidade e encanta as pessoas.' }
+      ] },
+      { n: '1.3', nome: 'O inconsciente e as crenças que limitam', conceito: 'Boa parte das decisões vem de crenças automáticas, formadas cedo e quase nunca questionadas.', base: 'Crenças centrais (Aaron Beck) · Fenômeno do impostor (Clance e Imes, 1978) · Mentalidade de crescimento (Carol Dweck, 2006) · Autoeficácia (Albert Bandura, 1977).', fields: [
+        { type: 'tabela', key: 'crencas', quem: 'P', label: 'Mapa de Crenças', dica: 'Preencha as duas primeiras colunas. As outras três completamos juntos.', rows: 3, cards: true, cols: [{ n: 'Situação em que travei' }, { n: 'O que pensei na hora' }, { n: 'A crença por trás' }, { n: 'Evidências contra essa crença' }, { n: 'Nova frase de trabalho', full: true }] }
+      ] },
+      { n: '1.4', nome: 'Propósito e direção', conceito: 'Sentido no trabalho é o encontro entre o que você ama, faz bem, o mundo precisa e alguém paga.', base: 'Ikigai, modelo de quatro círculos usado como ferramenta de propósito profissional.', fields: [
+        { type: 'area', key: 'ama', quem: 'P', label: 'O que eu amo fazer' },
+        { type: 'area', key: 'fazbem', quem: 'P', label: 'O que eu faço bem' },
+        { type: 'area', key: 'mundo', quem: 'P', label: 'O que o mundo precisa e eu posso oferecer' },
+        { type: 'area', key: 'pagam', quem: 'P', label: 'Pelo que as pessoas me pagam' },
+        { type: 'area', key: 'proposito', quem: 'J', label: 'Declaração de Propósito' },
+        { type: 'area', key: 'visao', quem: 'P', label: 'Visão de 3 anos, pessoal e profissional' },
+        { type: 'sub', text: 'Fechamento da etapa' },
+        { type: 'proposta', key: 'retrato', label: 'Seu Retrato de Essência' }
+      ] }
+    ] },
+    { id: 2, mov: 0, semana: 'Semana 2', nome: 'Tradução', objetivo: 'Dar ao negócio um porquê, um como e um o quê que nascem de quem o conduz, e entender de onde vem a receita.', mods: [
+      { n: '2.1', nome: 'Porquê, como e o quê', conceito: 'As pessoas compram primeiro a razão de existir de uma marca.', base: 'Círculo Dourado (Simon Sinek, Comece pelo porquê, 2009).', fields: [
+        { type: 'proposta', key: 'circulo', label: 'Porquê, como e o quê do seu negócio' }
+      ] },
+      { n: '2.2', nome: 'Raio-X do negócio', conceito: 'Nem todo produto merece o mesmo esforço de marketing.', base: 'Curva ABC: poucos produtos concentram a maior parte da receita ou do lucro.', fields: [
+        { type: 'tabela', key: 'prod', quem: 'P', label: 'Seus produtos e serviços', rows: 6, cols: [{ n: 'Produto ou serviço' }, { n: 'Preço (R$)' }, { n: 'Margem (%)' }, { n: 'Vendas por mês' }] },
+        { type: 'mentor', key: 'raiox', label: 'Curva ABC e produto-herói sugerido' },
+        { type: 'text', key: 'heroi', quem: 'J', label: 'Meu produto-herói' }
+      ] },
+      { n: '2.3', nome: 'Proposta de valor', conceito: 'O cliente não compra um produto; ele contrata uma solução para uma tarefa, uma dor ou um desejo.', base: 'Canvas da Proposta de Valor (Osterwalder e outros, 2014).', fields: [
+        { type: 'area', key: 'tarefas', quem: 'P', label: 'O que o cliente quer resolver' },
+        { type: 'area', key: 'dores', quem: 'P', label: 'As dores dele', dica: 'Use as palavras que os clientes usam.' },
+        { type: 'area', key: 'ganhos', quem: 'P', label: 'Os ganhos que ele deseja' },
+        { type: 'tabela', key: 'alivio', quem: 'J', label: 'Como o meu negócio responde', rows: 3, cols: [{ n: 'Dor ou desejo' }, { n: 'Como eu resolvo' }] },
+        { type: 'proposta', key: 'valor', label: 'Sua proposta de valor' }
+      ] },
+      { n: '2.4', nome: 'A ponte', conceito: 'A essência só vira vantagem quando o cliente a percebe como benefício.', base: 'Ponte Essência → Negócio.', fields: [
+        { type: 'tabela', key: 'ponte', quem: 'P', label: 'Ponte Essência → Negócio', rows: 3, cols: [{ n: 'Virtude ou habilidade' }, { n: 'Onde aparece no negócio' }, { n: 'Benefício para o cliente' }] },
+        { type: 'area', key: 'escondida', quem: 'J', label: 'Onde a minha essência está escondida ou desperdiçada' },
+        { type: 'sub', text: 'Fechamento da etapa' },
+        { type: 'proposta', key: 'tese', label: 'Sua Tese de Valor' }
+      ] }
+    ] },
+    { id: 3, mov: 1, semana: 'Semana 3', nome: 'Fundamentos', objetivo: 'Entender a lógica dos três pilares bem o bastante para decidir sozinho e avaliar qualquer fornecedor.', mods: [
+      { n: '3.1', nome: 'Posicionamento', conceito: 'Posicionamento é o lugar que a marca ocupa na mente do cliente. Quem não ocupa um lugar claro é comparado por preço.', base: 'Posicionamento: a batalha por sua mente (Al Ries e Jack Trout, 1981) · diferenciação · preço e valor percebido.', fields: [
+        { type: 'mentor', key: 'concorrentes', label: 'Posição de cada concorrente' },
+        { type: 'area', key: 'lugarvazio', quem: 'P', label: 'Que lugar está vazio no meu mercado?' },
+        { type: 'area', key: 'pos_entendi', quem: 'P', label: 'O que eu entendi sobre posicionamento' },
+        { type: 'slider', key: 'pos_nota', quem: 'P', label: 'Minha nota hoje neste pilar' }
+      ] },
+      { n: '3.2', nome: 'Copy', conceito: 'Copy é a escrita que conduz alguém a uma decisão. Antes de escrever, é preciso saber o quanto o público já sabe.', base: 'Copy em Camadas, o método da mentoria · níveis de consciência (Eugene Schwartz, 1966) · princípios de influência (Robert Cialdini, 1984).', fields: [
+        { type: 'tabela', key: 'conteudos', quem: 'P', label: 'Classifique 5 conteúdos ou anúncios seus', rows: 5, cols: [{ n: 'Conteúdo ou anúncio' }, { n: 'Nível de consciência', opts: ['Inconsciente', 'Consciente do problema', 'Consciente da solução', 'Consciente do produto', 'Totalmente consciente'] }, { n: 'Blocos da colinha presentes', opts: ['Todos os 7', 'Alguns', 'Nenhum'] }] },
+        { type: 'area', key: 'reescrita', quem: 'J', label: 'Um deles reescrito com a Copy em Camadas' },
+        { type: 'slider', key: 'copy_nota', quem: 'P', label: 'Minha nota hoje neste pilar' }
+      ] },
+      { n: '3.3', nome: 'Distribuição', conceito: 'A melhor mensagem não vende se não chegar às pessoas certas.', base: 'Funil de topo, meio e fundo · demanda ativa e latente · sinais que as plataformas usam para distribuir.', fields: [
+        { type: 'tabela', key: 'canais', quem: 'P', label: 'Seus canais no funil', rows: 5, cols: [{ n: 'Canal' }, { n: 'Etapa do funil', opts: ['Topo: atrair', 'Meio: gerar confiança', 'Fundo: converter'] }] },
+        { type: 'area', key: 'dist_entendi', quem: 'P', label: 'O que eu entendi sobre distribuição' },
+        { type: 'slider', key: 'dist_nota', quem: 'P', label: 'Minha nota hoje neste pilar' }
+      ] }
+    ] },
+    { id: 4, mov: 1, semana: 'Semana 4', nome: 'Mapa de Lacunas', objetivo: 'Medir a distância entre o conceito e a realidade para atacar primeiro o que trava mais receita.', mods: [
+      { n: '4.1', nome: 'Auditoria de presença', conceito: 'Antes de criar algo novo, é preciso ver o que o cliente encontra hoje.', base: 'Checklist por canal: Instagram, Perfil da Empresa no Google, site, WhatsApp e anúncios.', fields: [
+        { type: 'mentor', key: 'auditoria', label: 'Relatório de Auditoria' },
+        { type: 'area', key: 'aud_atencao', quem: 'J', label: 'O que mais chamou atenção na auditoria' }
+      ] },
+      { n: '4.2', nome: 'Funil em números', conceito: 'Todo negócio tem um funil. Medir cada passagem mostra onde o dinheiro escapa.', base: 'Taxas de conversão entre as etapas do funil.', fields: [
+        { type: 'tabela', key: 'funil', quem: 'P', label: 'Números do último mês', rowLabels: ['Alcance', 'Contatos', 'Orçamentos', 'Vendas', 'Recompras'], cols: [{ n: 'Quantidade' }] },
+        { type: 'mentor', key: 'funil', label: 'Taxas e gargalo principal' }
+      ] },
+      { n: '4.3', nome: 'Matriz de Lacunas', conceito: 'Nem toda lacuna merece atenção agora: alto impacto e baixo esforço vêm primeiro.', base: 'Matriz impacto × esforço.', fields: [
+        { type: 'tabela', key: 'lac', quem: 'J', label: 'Matriz de Lacunas', rowLabels: AREAS, cols: [{ n: 'Principal lacuna' }, { n: 'Impacto', opts: NIVEL }, { n: 'Esforço', opts: NIVEL }], sugestao: true },
+        { type: 'area', key: 'funciona', quem: 'J', label: 'O que já funciona e não será refeito' },
+        { type: 'sub', text: 'Fechamento da etapa' },
+        { type: 'proposta', key: 'lacunas', label: 'As 3 lacunas prioritárias' }
+      ] }
+    ] },
+    { id: 5, mov: 1, semana: 'Semana 4', nome: 'Perspectivas', objetivo: 'Enxergar, com dados e casos reais, os caminhos do seu ramo e escolher o mais rentável para o seu momento.', mods: [
+      { n: '5.1', nome: 'Leitura de mercado', conceito: 'Decisão estratégica se toma com dado, não com achismo.', base: 'Dados de procura, concorrência e consumidor levantados pelo mentor, com fonte e data.', fields: [
+        { type: 'mentor', key: 'mercado', label: 'Dados do seu mercado' },
+        { type: 'area', key: 'leitura', quem: 'P', label: 'O que esses dados mostram para você' }
+      ] },
+      { n: '5.2', nome: 'Casos que já deram certo', conceito: 'O caminho mais seguro costuma ser adaptar o que já funcionou.', base: '3 referências: uma local, uma nacional do ramo e uma de fora do ramo.', fields: [
+        { type: 'mentor', key: 'casos', label: 'Casos de referência' },
+        { type: 'area', key: 'caso', quem: 'P', label: 'Qual caso combina com a sua essência, e por quê' }
+      ] },
+      { n: '5.3', nome: 'Os caminhos possíveis', conceito: 'Cada ramo oferece caminhos diferentes de alcance e receita.', base: 'Alcance orgânico · autoridade e branding · demanda paga · reposicionamento.', fields: [
+        { type: 'persp', key: 'persp', quem: 'P', label: 'Quadro de Perspectivas' }
+      ] },
+      { n: '5.4', nome: 'A escolha', conceito: 'Escolher é também decidir o que não fazer agora.', base: 'Pontuação de 1 a 5 em quatro critérios.', fields: [
+        { type: 'tabela', key: 'pont', quem: 'J', label: 'Pontuação dos caminhos', rowLabels: C.perspectivas, cols: [{ n: 'Essência', opts: ['1', '2', '3', '4', '5'] }, { n: 'Caixa', opts: ['1', '2', '3', '4', '5'] }, { n: 'Tempo', opts: ['1', '2', '3', '4', '5'] }, { n: 'Potencial', opts: ['1', '2', '3', '4', '5'] }], total: true },
+        { type: 'sub', text: 'Fechamento da etapa' },
+        { type: 'proposta', key: 'direcao', label: 'Sua Direção Estratégica' },
+        { type: 'area', key: 'depois', quem: 'J', label: 'O que fica para depois' }
+      ] }
+    ] },
+    { id: 6, mov: 2, semana: 'Semanas 5 a 7', nome: 'Empacotamento', objetivo: 'Transformar a essência em marca, mensagem e distribuição rodando, com a primeira campanha no ar.', mods: [
+      { n: '6A', nome: 'Posicionamento aplicado', conceito: 'O posicionamento definitivo nasce da essência, das lacunas e da direção escolhida.', base: 'Declaração de posicionamento · arquétipos de marca (Mark e Pearson, 2001).', fields: [
+        { type: 'proposta', key: 'posicionamento', label: 'Seu posicionamento', dica: 'Declaração, categoria e o que a sua marca combate.' },
+        { type: 'chips', key: 'arquetipo', quem: 'J', label: 'Arquétipo principal', options: ['Inocente', 'Explorador', 'Sábio', 'Herói', 'Fora da lei', 'Mago', 'Cara comum', 'Amante', 'Bobo da corte', 'Cuidador', 'Criador', 'Governante'] },
+        { type: 'lista', key: 'tom', quem: 'P', label: 'Tom de voz em 3 palavras', n: 3, ph: 'Palavra' },
+        { type: 'area', key: 'palavras', quem: 'P', label: 'Palavras que a marca usa e palavras que evita' },
+        { type: 'proposta', key: 'territorios', label: 'Seus territórios de conteúdo' },
+        { type: 'area', key: 'provas', quem: 'P', label: 'Banco de provas', dica: 'Depoimentos, números, antes e depois, bastidores, certificações.' }
+      ] },
+      { n: '6B', nome: 'Copy aplicada', conceito: 'Toda copy, de um story a uma VSL, é construída nos mesmos 7 blocos. O que muda de um formato para outro é o tamanho de cada bloco.', base: 'Copy em Camadas: chamada, desenvolvimento, educação, reestruturação de pensamento, solução prática, convite e fechamento. Versão curta: quebra de padrão, identificação, reenquadramento e direção.', fields: [
+        { type: 'area', key: 'promessa', quem: 'J', label: 'Promessa central' },
+        { type: 'lista', key: 'mensagens', quem: 'J', label: 'Mensagens-chave', n: 3, ph: 'Mensagem' },
+        { type: 'pronto', key: 'copyPronta' },
+        { type: 'tabela', key: 'colinha', quem: 'P', label: 'Agora a sua: escreva uma peça bloco a bloco', dica: 'Use a copy pronta acima como exemplo. Escolha outro tema e escreva cada bloco.', rowLabels: ['1 · Chamada', '2 · Desenvolvimento', '3 · Educação', '4 · Reestruturação', '5 · Solução prática', '6 · Convite e autoridade', '7 · Fechamento'], cols: [{ n: 'Seu texto', full: true }] },
+        { type: 'sub', text: 'Anúncios conforme o funil' },
+        { type: 'exemplos', key: 'anuncios' },
+        { type: 'tabela', key: 'anuncios', quem: 'P', label: 'Agora os seus: um criativo para cada etapa do funil', dica: 'Topo: valor sem pedir nada. Meio: prova. Fundo: oferta direta. O mentor revisa.', rowLabels: ['Topo · valor', 'Meio · prova', 'Fundo · direto'], cols: [{ n: 'Ideia do criativo' }, { n: 'Texto do anúncio', full: true }] },
+        { type: 'sub', text: 'Marketing de guerrilha' },
+        { type: 'guerrilha', key: 'guerrilha' },
+        { type: 'area', key: 'guerrilha_minha', quem: 'P', label: 'Sua versão ou uma nova ideia de ação', dica: 'Ações para chamar atenção, que também viram Reels.' },
+        { type: 'sub', text: 'Suas peças, formato por formato' },
+        { type: 'formatos', key: 'fmt', quem: 'P' }
+      ] },
+      { n: '6C', nome: 'Distribuição aplicada', conceito: 'Orgânico constrói relação; o tráfego pago acelera e escala o que funciona.', base: 'Linha editorial · leilão de anúncios · funil e objetivos do Gerenciador de Anúncios · aplicação com IA.', fields: [
+        { type: 'proposta', key: 'editorial', label: 'Linha editorial e calendário sugeridos' },
+        { type: 'area', key: 'ed_atrair', quem: 'J', label: 'Linha editorial: conteúdos para atrair' },
+        { type: 'area', key: 'ed_conectar', quem: 'J', label: 'Conteúdos para conectar' },
+        { type: 'area', key: 'ed_vender', quem: 'J', label: 'Conteúdos para vender' },
+        { type: 'tabela', key: 'cal', quem: 'P', label: 'Calendário da semana', rowLabels: DIAS, cols: [{ n: 'Tema' }, { n: 'Formato', opts: ['Reels', 'Carrossel', 'Stories', 'Foto', 'Vídeo longo', 'Sem post'] }] },
+        { type: 'area', key: 'parcerias', quem: 'P', label: 'Parcerias locais e programa de indicação' },
+        { type: 'sub', text: 'Tráfego pago · para que serve' },
+        { type: 'area', key: 'trafego_entendi', quem: 'P', label: 'O que eu entendi sobre leilão, objetivos e investimento' },
+        { type: 'sub', text: 'Tráfego pago · o funil da plataforma' },
+        { type: 'tabela', key: 'objetivos', quem: 'J', label: 'Objetivo e criativo de cada etapa', rowLabels: ['Topo (frio)', 'Meio (morno)', 'Fundo (quente)'], cols: [{ n: 'Objetivo na Meta', opts: ['Reconhecimento', 'Engajamento', 'Tráfego', 'Cadastros', 'Vendas'] }, { n: 'Criativo que vai rodar' }] },
+        { type: 'sub', text: 'Tráfego pago · a sua estratégia' },
+        { type: 'proposta', key: 'trafego', label: 'Estratégia de tráfego sugerida', dica: 'Objetivo, oferta, públicos, criativos e verba.' },
+        { type: 'text', key: 'camp_obj', quem: 'J', label: 'Objetivo da campanha' },
+        { type: 'text', key: 'camp_oferta', quem: 'J', label: 'Oferta' },
+        { type: 'tabela', key: 'publicos', quem: 'J', label: 'Públicos', rowLabels: ['Frio (atrair)', 'Morno (nutrir)', 'Quente (converter)'], cols: [{ n: 'Quem é' }, { n: 'Criativo' }] },
+        { type: 'text', key: 'camp_verba', quem: 'J', label: 'Verba diária (R$)' },
+        { type: 'sub', text: 'Tráfego pago · aplicação com inteligência artificial' },
+        { type: 'checks', key: 'setup', quem: 'J', label: 'Primeira campanha com a ferramenta de IA', dica: 'Você informa e aprova; a IA monta a parte técnica no Gerenciador de Anúncios.', options: ['Ferramenta de IA conectada ao Gerenciador', 'Objetivo, oferta, público e verba informados', 'Campanha montada pela IA revisada', 'Campanha publicada', 'Primeira leitura das métricas'] }
+      ] }
+    ] },
+    { id: 7, mov: 2, semana: 'Semana 8', nome: 'Rota de Receita', objetivo: 'Transformar a aplicação em faturamento medido e sair com uma rotina que você mantém sozinho.', mods: [
+      { n: '7.1', nome: 'Leitura de resultados', conceito: 'O que não é medido não melhora. Cada canal tem a sua métrica principal.', base: 'Métricas do Instagram (alcance, retenção, salvamentos) e do Gerenciador (custo por resultado, CTR, frequência, ROAS).', fields: [
+        { type: 'tabela', key: 'kpi', quem: 'P', label: 'Painel de Indicadores', rowLabels: ['Alcance mensal', 'Contatos', 'Vendas', 'Faturamento (R$)', 'Custo por cliente (R$)'], cols: [{ n: 'Antes' }, { n: 'Agora' }] },
+        { type: 'mentor', key: 'resultados', label: 'Leitura dos resultados' }
+      ] },
+      { n: '7.2', nome: 'Ajuste e teste', conceito: 'Melhorar é mudar uma variável por vez e comparar.', base: 'Testes A/B de gancho, criativo, oferta e público.', fields: [
+        { type: 'tabela', key: 'testes', quem: 'J', label: 'Plano de testes', rows: 2, cols: [{ n: 'O que testar' }, { n: 'Hipótese' }, { n: 'Resultado' }] }
+      ] },
+      { n: '7.3', nome: 'Rotina e autonomia', conceito: 'Marketing consistente é rotina, não inspiração.', base: 'Ciclo semanal: planejar, produzir, publicar e medir.', fields: [
+        { type: 'tabela', key: 'rotina', quem: 'P', label: 'Rotina semanal', rowLabels: ['Planejar', 'Produzir', 'Publicar', 'Medir'], cols: [{ n: 'Dia', opts: DIAS }, { n: 'Horário' }] },
+        { type: 'proposta', key: 'plano90', label: 'Plano de 90 dias sugerido' },
+        { type: 'lista', key: 'metas', quem: 'J', label: 'Plano de 90 dias: 3 metas', n: 3, ph: 'Meta' },
+        { type: 'area', key: 'mes1', quem: 'J', label: 'Mês 1: ações' },
+        { type: 'area', key: 'mes2', quem: 'J', label: 'Mês 2: ações' },
+        { type: 'area', key: 'mes3', quem: 'J', label: 'Mês 3: ações' },
+        { type: 'area', key: 'revisita', quem: 'P', label: 'O que mudou no meu Retrato de Essência desde a Etapa 1' }
+      ] }
+    ] }
+  ];
+
+  /* ---------- estado ---------- */
+  const STORE = 'pincelada:' + C.empresa;
+  let A = (window.RESPOSTAS && typeof window.RESPOSTAS === 'object') ? window.RESPOSTAS : {};
+  let saveTimer = null, tentativa = null;
+  function marca(t) { const n = document.getElementById('salvo'); if (n) n.textContent = t; }
+  async function enviar() {
+    try {
+      const r = await fetch('/api.php?a=salvar&t=' + encodeURIComponent(window.TOKEN || ''), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ respostas: A }) });
+      if (!r.ok) throw new Error('falha');
+      marca('Salvo');
+    } catch (e) {
+      marca('Sem conexão. Tentando salvar de novo…');
+      clearTimeout(tentativa); tentativa = setTimeout(enviar, 5000);
+    }
+  }
+  function salvar() {
+    clearTimeout(saveTimer);
+    marca('Salvando…');
+    try { localStorage.setItem(STORE, JSON.stringify(A)); } catch (e) {}
+    saveTimer = setTimeout(enviar, 800);
+  }
+  const val = k => (A[k] == null ? '' : A[k]);
+  function set(k, v) { A[k] = v; salvar(); atualizarProgresso(); }
+
+  /* ---------- chaves e rótulos ---------- */
+  function itens(f) {
+    switch (f.type) {
+      case 'sub': case 'mentor': case 'pronto': case 'exemplos': case 'guerrilha': return [];
+      case 'proposta': return [[f.key + '_aval', f.label + ' · sua avaliação'], [f.key + '_ajuste', f.label + ' · ajustes', true]];
+      case 'lista': return Array.from({ length: f.n }, (_, i) => [`${f.key}_${i + 1}`, `${f.label} ${i + 1}`]);
+      case 'tabela': {
+        const linhas = f.rowLabels || Array.from({ length: f.rows }, (_, i) => 'Linha ' + (i + 1));
+        return linhas.flatMap((rl, ri) => f.cols.map((c, ci) => [`${f.key}_${ri}_${ci}`, `${f.label} · ${rl} · ${c.n}`]));
+      }
+      case 'persp': return C.perspectivas.flatMap((p, i) => [[`persp_${i}_pros`, `${p} · Prós`], [`persp_${i}_contras`, `${p} · Contras`], [`persp_${i}_inv`, `${p} · Investimento`], [`persp_${i}_prazo`, `${p} · Prazo`]]);
+      case 'formatos': return C.formatos.map(fm => [`fmt_${fm}`, `${fm}: primeira peça`]);
+      default: return [[f.key, f.label]];
+    }
+  }
+  const chavesMod = m => m.fields.flatMap(itens);
+  const chavesEtapa = s => s.mods.flatMap(chavesMod);
+  function preenchido(k) { const v = A[k]; return Array.isArray(v) ? v.length > 0 : (v != null && String(v).trim() !== ''); }
+  const pctDe = ks0 => { const ks = ks0.filter(x => !x[2]); return ks.length ? Math.round(100 * ks.filter(([k]) => preenchido(k)).length / ks.length) : 0; };
+  const pct = s => pctDe(chavesEtapa(s));
+  function mostrar(k) {
+    const v = A[k];
+    if (Array.isArray(v)) return v.join(', ');
+    if (/_nota$/.test(k) && v !== '' && v != null) return v + '/10';
+    return v == null ? '' : String(v);
+  }
+
+  /* ---------- utilidades ---------- */
+  function el(tag, attrs, ...kids) {
+    const n = document.createElement(tag);
+    for (const [a, v] of Object.entries(attrs || {})) {
+      if (a === 'class') n.className = v; else if (a.startsWith('on')) n.addEventListener(a.slice(2), v); else if (v !== false && v != null) n.setAttribute(a, v);
+    }
+    for (const k of kids.flat()) if (k != null) n.append(k.nodeType ? k : document.createTextNode(k));
+    return n;
+  }
+  function entrada(k, ph, area, aria) {
+    const n = el(area ? 'textarea' : 'input', area ? { placeholder: ph || '', 'aria-label': aria || ph || '' } : { type: 'text', placeholder: ph || '', 'aria-label': aria || ph || '' });
+    n.value = val(k); n.addEventListener('input', () => set(k, n.value));
+    return n;
+  }
+  function seletor(k, opts, ph, depois) {
+    const s = el('select', { 'aria-label': ph }, el('option', { value: '' }, ph), opts.map(o => el('option', { value: o }, o)));
+    s.value = val(k); s.addEventListener('change', () => { set(k, s.value); if (depois) depois(); });
+    return s;
+  }
+  const badge = q => el('span', { class: 'badge ' + q }, QUEM[q]);
+  const rotulo = f => el('div', { class: 'lbl' }, f.label, f.quem ? badge(f.quem) : null);
+  let toastT;
+  function toast(t) { const n = document.getElementById('toast'); n.textContent = t; n.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => n.classList.remove('on'), 2200); }
+
+  function notaModulo(n) {
+    const nt = ((C.doMentor.modulos || {})[n]) || {};
+    if (!(nt.texto || '').trim()) return '';
+    return el('div', { class: 'mentor', style: 'margin-bottom:22px' }, el('div', { class: 'lbl' }, 'Preparado para você neste módulo', badge('M')),
+      el('p', { class: 'prop-texto' }, nt.texto), (nt.porque || '').trim() ? el('div', { class: 'prop-porque' }, el('b', {}, 'Por que isso importa no seu caso: '), nt.porque) : '');
+  }
+  /* ---------- campos ---------- */
+  function renderCampo(f) {
+    if (f.type === 'sub') return el('div', { class: 'sub' }, f.text);
+    const box = el('div', { class: 'campo' });
+    const dica = f.dica ? el('p', { class: 'dica' }, f.dica) : '';
+    switch (f.type) {
+      case 'text': box.append(rotulo(f), dica, entrada(f.key, f.ph, false, f.label)); break;
+      case 'area': box.append(rotulo(f), dica, entrada(f.key, f.ph, true, f.label)); break;
+      case 'lista': box.append(rotulo(f), dica, el('div', { class: 'lista ' + (f.n === 3 ? 'c3' : 'c2') }, Array.from({ length: f.n }, (_, i) => entrada(`${f.key}_${i + 1}`, f.ph + ' ' + (i + 1))))); break;
+      case 'chips': case 'checks': {
+        const multi = f.type === 'checks';
+        const atual = () => (multi ? (Array.isArray(A[f.key]) ? A[f.key] : []) : val(f.key));
+        const ativo = o => (multi ? atual().includes(o) : atual() === o);
+        const wrap = el('div', { class: 'chips' });
+        f.options.forEach(o => {
+          const b = el('button', { class: 'chip' + (ativo(o) ? ' on' : ''), type: 'button', 'aria-pressed': String(ativo(o)), onclick: () => {
+            if (multi) { const l = atual().slice(); const i = l.indexOf(o); if (i >= 0) l.splice(i, 1); else l.push(o); set(f.key, l); }
+            else set(f.key, atual() === o ? '' : o);
+            wrap.querySelectorAll('.chip').forEach(c => { const on = ativo(c.textContent); c.classList.toggle('on', on); c.setAttribute('aria-pressed', String(on)); });
+          } }, o);
+          wrap.append(b);
+        });
+        box.append(rotulo(f), dica, wrap); break;
+      }
+      case 'slider': {
+        const out = el('span', { class: 'val' }, val(f.key) === '' ? '–' : val(f.key));
+        const inp = el('input', { type: 'range', min: '0', max: '10', step: '1', 'aria-label': f.label });
+        inp.value = val(f.key) === '' ? 5 : val(f.key);
+        inp.addEventListener('input', () => { set(f.key, inp.value); out.textContent = inp.value; });
+        box.append(rotulo(f), el('div', { class: 'slider' }, inp, out)); break;
+      }
+      case 'mentor': {
+        const txt = (C.doMentor[f.key] || '').trim();
+        const corpo = txt ? el('ul', {}, txt.split('\n').filter(l => l.trim()).map(l => el('li', {}, l.trim()))) : el('p', { class: 'vazio', style: 'margin:4px 0 0' }, 'Seu mentor está preparando esta parte para o encontro.');
+        box.append(el('div', { class: 'mentor' }, el('div', { class: 'lbl' }, f.label, badge('M')), corpo)); break;
+      }
+      case 'tabela': {
+        const linhas = f.rowLabels || Array.from({ length: f.rows }, (_, i) => String(i + 1));
+        const cel = (ri, ci, c, rl) => c.opts ? seletor(`${f.key}_${ri}_${ci}`, c.opts, c.n, () => { atualizarSugestao(); atualizarTotais(); }) : entrada(`${f.key}_${ri}_${ci}`, f.rowLabels ? c.n : '', !!c.full, `${rl} · ${c.n}`);
+        box.append(rotulo(f), dica);
+        if (f.cards) {
+          linhas.forEach((rl, ri) => box.append(el('div', { class: 'linha-card' }, el('div', { class: 'n' }, (f.rowLabels ? rl : 'Situação ' + rl)),
+            f.cols.map((c, ci) => el('div', { class: c.full ? 'full' : '' }, el('label', {}, c.n), cel(ri, ci, c, rl))))));
+        } else {
+          const t = el('table', { class: 'grade' }, el('thead', {}, el('tr', {}, f.rowLabels ? el('th', {}, '') : null, f.cols.map(c => el('th', {}, c.n)), f.total ? el('th', {}, 'Total') : null)));
+          t.append(el('tbody', {}, linhas.map((rl, ri) => el('tr', {}, f.rowLabels ? el('td', { class: 'rot' }, rl) : null, f.cols.map((c, ci) => el('td', {}, cel(ri, ci, c, rl))), f.total ? el('td', { class: 'rot total', 'data-total': `${f.key}_${ri}` }, '') : null))));
+          box.append(t);
+        }
+        if (f.sugestao) box.append(el('div', { class: 'sugestao', id: 'sugestao' }));
+        setTimeout(() => { atualizarSugestao(); atualizarTotais(); }, 0);
+        break;
+      }
+      case 'persp': {
+        box.append(rotulo(f));
+        C.perspectivas.forEach((p, i) => box.append(el('div', { class: 'card-persp' }, el('h3', {}, p),
+          el('div', { class: 'duo' },
+            el('div', {}, el('label', { class: 'mini' }, 'Prós'), entrada(`persp_${i}_pros`, '', true, p + ' · Prós')),
+            el('div', {}, el('label', { class: 'mini' }, 'Contras'), entrada(`persp_${i}_contras`, '', true, p + ' · Contras'))),
+          el('div', { class: 'duo' },
+            el('div', {}, el('label', { class: 'mini' }, 'Investimento'), entrada(`persp_${i}_inv`, 'Tempo e verba', false, p + ' · Investimento')),
+            el('div', {}, el('label', { class: 'mini' }, 'Prazo para resultado'), entrada(`persp_${i}_prazo`, 'Ex.: 60 dias', false, p + ' · Prazo'))))));
+        break;
+      }
+      case 'proposta': {
+        const pr = ((C.doMentor.propostas || {})[f.key]) || {};
+        const tem = (pr.texto || '').trim();
+        const card = el('div', { class: 'mentor' }, el('div', { class: 'lbl' }, f.label, badge('M'), el('span', { class: 'tag-prop' }, 'Proposta do mentor')),
+          f.dica ? el('p', { class: 'dica' }, f.dica) : '',
+          tem ? el('p', { class: 'prop-texto' }, pr.texto) : el('p', { class: 'vazio', style: 'margin:4px 0 0' }, 'Seu mentor está preparando esta proposta a partir do seu briefing.'),
+          (pr.porque || '').trim() ? el('div', { class: 'prop-porque' }, el('b', {}, 'Por que eu indico: '), pr.porque) : '');
+        box.append(card);
+        if (tem) {
+          const k = f.key + '_aval';
+          const wrap = el('div', { class: 'chips', style: 'margin-top:12px' });
+          ['Aprovo', 'Quero ajustar'].forEach(o => wrap.append(el('button', { class: 'chip' + (val(k) === o ? ' on' : ''), type: 'button', 'aria-pressed': String(val(k) === o), onclick: () => {
+            set(k, val(k) === o ? '' : o);
+            wrap.querySelectorAll('.chip').forEach(c => { const on = c.textContent === val(k); c.classList.toggle('on', on); c.setAttribute('aria-pressed', String(on)); });
+          } }, o)));
+          box.append(el('div', { class: 'lbl', style: 'margin-top:14px' }, 'Sua avaliação', badge('P')), wrap,
+            el('div', { class: 'lbl', style: 'margin-top:14px' }, 'Ajustes ou comentários (opcional)', badge('P')), entrada(f.key + '_ajuste', 'O que você mudaria?', true, f.label + ' · ajustes'));
+        }
+        break;
+      }
+      case 'pronto': {
+        const cp = C.doMentor.copyPronta || {};
+        const blocos = cp.blocos || [];
+        const NOMES = ['Chamada', 'Desenvolvimento', 'Educação', 'Reestruturação', 'Solução prática', 'Convite e autoridade', 'Fechamento'];
+        const tem = blocos.some(b => (b || '').trim());
+        box.append(el('div', { class: 'mentor' }, el('div', { class: 'lbl' }, 'Copy pronta para você' + (cp.formato ? ' · ' + cp.formato : ''), badge('M')),
+          cp.tema ? el('p', { class: 'dica' }, 'Tema: ' + cp.tema) : '',
+          tem ? el('ol', { class: 'blocos' }, blocos.map((b, i) => el('li', {}, el('b', {}, NOMES[i] + ': '), b || '–'))) : el('p', { class: 'vazio', style: 'margin:4px 0 0' }, 'Seu mentor está escrevendo uma copy pronta para o seu negócio, pela Copy em Camadas.')));
+        break;
+      }
+      case 'exemplos': {
+        const ex = C.doMentor.anuncios || {};
+        const itensEx = [['Topo · valor', ex.topo], ['Meio · prova', ex.meio], ['Fundo · direto', ex.fundo]].filter(x => (x[1] || '').trim());
+        box.append(el('div', { class: 'mentor' }, el('div', { class: 'lbl' }, 'Anúncios de exemplo para o seu negócio', badge('M')),
+          itensEx.length ? el('ul', {}, itensEx.map(([n, t]) => el('li', {}, el('b', {}, n + ': '), t))) : el('p', { class: 'vazio', style: 'margin:4px 0 0' }, 'Seu mentor está preparando um anúncio de exemplo para cada etapa do funil.')));
+        break;
+      }
+      case 'guerrilha': {
+        const gs = (C.doMentor.guerrilha || []).filter(g => (g.titulo || g.acao || '').trim());
+        box.append(el('div', { class: 'mentor' }, el('div', { class: 'lbl' }, 'Ações prontas para o seu negócio', badge('M')),
+          gs.length ? gs.map(g => el('div', { class: 'guerra' }, el('b', {}, g.titulo || 'Ação'), g.acao ? el('p', {}, g.acao) : '', g.reels ? el('p', { class: 'dica' }, 'Como vira Reels: ' + g.reels) : '')) : el('p', { class: 'vazio', style: 'margin:4px 0 0' }, 'Seu mentor está preparando ações de guerrilha para o seu negócio.')));
+        break;
+      }
+      case 'formatos': {
+        C.formatos.forEach(fm => { const pc = ((C.doMentor.pecas || {})[fm] || '').trim(); box.append(el('div', { class: 'campo' }, el('div', { class: 'lbl' }, fm, badge('P')), el('p', { class: 'dica' }, (DICA_FORMATO[fm] || '') + ' O mentor revisa.'),
+          pc ? el('div', { class: 'mentor', style: 'margin-bottom:10px' }, el('div', { class: 'lbl' }, 'Exemplo pronto para o seu negócio', badge('M')), el('p', { class: 'prop-texto' }, pc)) : '',
+          entrada(`fmt_${fm}`, pc ? 'Agora escreva a sua versão' : '', true, fm))); });
+        break;
+      }
+    }
+    return box;
+  }
+
+  function atualizarSugestao() {
+    const n = document.getElementById('sugestao'); if (!n) return;
+    const peso = v => NIVEL.indexOf(v) + 1;
+    const lista = AREAS.map((a, i) => ({ a, i: val(`lac_${i}_1`), e: val(`lac_${i}_2`) })).filter(x => x.i && x.e)
+      .map(x => ({ a: x.a, s: peso(x.i) * 2 - peso(x.e) })).sort((x, y) => y.s - x.s).slice(0, 3);
+    n.replaceChildren();
+    if (!lista.length) { n.append('Classifique impacto e esforço para ver por onde começar.'); return; }
+    n.append(el('b', {}, 'Sugestão da matriz: '), 'comece por ' + lista.map(x => x.a).join(', ') + '. São as áreas de maior impacto com o menor esforço.');
+  }
+  function atualizarTotais() {
+    document.querySelectorAll('[data-total]').forEach(td => {
+      const base = td.getAttribute('data-total');
+      const vs = [0, 1, 2, 3].map(ci => Number(val(`${base}_${ci}`)) || 0);
+      td.textContent = vs.some(Boolean) ? String(vs.reduce((a, b) => a + b, 0)) + '/20' : '–';
+    });
+  }
+
+  /* ---------- texto para enviar ---------- */
+  function textoEtapa(s) {
+    const linhas = [`*Etapa ${String(s.id).padStart(2, '0')} · ${s.nome}*`];
+    chavesEtapa(s).forEach(([k, l]) => { if (preenchido(k)) linhas.push(`${l}: ${mostrar(k)}`); });
+    return linhas.join('\n');
+  }
+  const cabecalho = () => `Pincelada Anatômica · ${C.empresa}\nMentorado: ${C.mentorado}`;
+  const textoTudo = () => cabecalho() + '\n\n' + STAGES.map(textoEtapa).join('\n\n');
+  async function copiar(txt) {
+    try { await navigator.clipboard.writeText(txt); toast('Respostas copiadas'); }
+    catch (e) { toast('Não foi possível copiar neste navegador'); }
+  }
+
+  /* ---------- fluxograma ---------- */
+  let atual = 'inicio';
+  function renderFluxo() {
+    const f = document.getElementById('fluxo'); f.replaceChildren();
+    MOVS.forEach((m, mi) => {
+      const nos = el('div', { class: 'nos' });
+      STAGES.filter(s => s.mov === mi).forEach(s => {
+        const p = pct(s);
+        nos.append(el('button', { class: `no ${p === 100 ? 'feita' : p > 0 ? 'andamento' : ''}${atual === 'etapa-' + s.id ? ' ativa' : ''}`, type: 'button', 'data-id': s.id, onclick: () => { location.hash = 'etapa-' + s.id; } },
+          el('span', { class: 'circ' }, p === 100 ? '✓' : String(s.id).padStart(2, '0')),
+          el('span', { class: 'no-nome' }, s.nome),
+          el('span', { class: 'no-pct' }, p + '%')));
+      });
+      f.append(el('div', { class: 'mov' }, el('div', { class: 'mov-nome' }, m), nos));
+    });
+    f.append(el('button', { class: 'resumo-btn', type: 'button', onclick: () => { location.hash = 'resumo'; } }, 'Resumo'));
+  }
+  function atualizarProgresso() {
+    const bb = document.getElementById('barraBriefing'); if (bb) { bb.style.width = pctBriefing() + '%'; document.getElementById('pctBriefing').textContent = pctBriefing() + '% respondido'; }
+    STAGES.forEach(s => {
+      const p = pct(s);
+      const b = document.querySelector(`.no[data-id="${s.id}"]`);
+      if (b) {
+        b.classList.toggle('feita', p === 100); b.classList.toggle('andamento', p > 0 && p < 100);
+        b.querySelector('.circ').textContent = p === 100 ? '✓' : String(s.id).padStart(2, '0');
+        b.querySelector('.no-pct').textContent = p + '%';
+      }
+      if (atual === 'etapa-' + s.id) {
+        const bar = document.getElementById('barraEtapa'); if (bar) bar.style.width = p + '%';
+        const t = document.getElementById('pctEtapa'); if (t) t.textContent = p + '% preenchido';
+        s.mods.forEach(m => { const n = document.querySelector(`[data-mod="${m.n}"]`); if (n) n.textContent = pctDe(chavesMod(m)) + '%'; });
+      }
+    });
+  }
+
+
+  /* ---------- portal: apresentação e briefing ---------- */
+  const SLIDES = ["<section id=\"capa\" class=\"escuro\" data-transition=\"fade\">\n<div class=\"capa-topo\">\n<p class=\"eyebrow\">Mentoria · Método Pincelada Anatômica</p>\n<h1>[Nome da empresa]</h1>\n<div class=\"capa-linha\"></div>\n<p class=\"lead\">Plano de mentoria preparado para [Nome do mentorado]: da leitura da essência à marca pronta para o mercado.</p>\n</div>\n<div class=\"rodape\"><p>[Seu nome] · Mentor</p><p>[Mês e ano]</p></div>\n\n</section>", "<section id=\"tese\">\n<p class=\"eyebrow\">A tese do método</p>\n<p class=\"tese\">Todo negócio forte carrega a pincelada de quem o conduz. E pincelada não se copia.</p>\n<p class=\"lead\">Antes de posicionar a sua empresa, vamos entender quem está por trás dela: suas virtudes, habilidades e dons. É dessa matéria-prima que nasce um posicionamento que nenhum concorrente consegue imitar.</p>\n<div class=\"rodape\"><p>Pincelada Anatômica · [Nome da empresa]</p><p>2</p></div>\n</section>", "<section id=\"jornada\" class=\"alt\">\n<p class=\"eyebrow\">Como funciona</p>\n<h2>Três movimentos, sete etapas, oito semanas</h2>\n<div class=\"cols\">\n<div class=\"col\">\n<h3>Ler a essência</h3>\n<div class=\"mini\"><h3>01 · Imersão</h3><p>Leitura da essência · Semana 1</p></div>\n<div class=\"mini\"><h3>02 · Tradução</h3><p>Da essência ao negócio · Semana 2</p></div>\n</div>\n<div class=\"col\">\n<h3>Construir a ponte</h3>\n<div class=\"mini\"><h3>03 · Fundamentos</h3><p>Os 3 pilares em conceito · Semana 3</p></div>\n<div class=\"mini\"><h3>04 · Mapa de Lacunas</h3><p>Gargalos prioritários · Semana 4</p></div>\n<div class=\"mini\"><h3>05 · Perspectivas</h3><p>Caminhos do seu ramo · Semana 4</p></div>\n</div>\n<div class=\"col\">\n<h3>Empacotar para o mercado</h3>\n<div class=\"mini\"><h3>06 · Empacotamento</h3><p>Os 3 pilares aplicados · Semanas 5 a 7</p></div>\n<div class=\"mini\"><h3>07 · Rota de Receita</h3><p>Indicadores e rotina · Semana 8</p></div>\n</div>\n</div>\n<div class=\"rodape\"><p>Pincelada Anatômica · [Nome da empresa]</p><p>3</p></div>\n</section>", "<section id=\"metodo\">\n<p class=\"eyebrow\">O método</p>\n<h2>Cada módulo segue o mesmo ciclo</h2>\n<div class=\"cols\">\n<div class=\"col\"><p class=\"passo\">1</p><h3>Conceito</h3><p>O que você precisa entender antes de agir.</p></div>\n<div class=\"col\"><p class=\"passo\">2</p><h3>Estudo</h3><p>A base que sustenta o conceito: autores, pesquisas, dados de mercado e casos reais.</p></div>\n<div class=\"col\"><p class=\"passo\">3</p><h3>Aplicação</h3><p>O exercício feito sobre o seu negócio, não sobre um exemplo genérico.</p></div>\n<div class=\"col\"><p class=\"passo\">4</p><h3>Entrega</h3><p>O que fica pronto ao fim do módulo.</p></div>\n</div>\n<p class=\"nota\">Em cada ficha está marcado quem preenche: o mentor, você, ou nós dois juntos no encontro.</p>\n<div class=\"rodape\"><p>Pincelada Anatômica · [Nome da empresa]</p><p>4</p></div>\n</section>", "<section id=\"inicio\">\n<p class=\"eyebrow\">Antes do primeiro encontro</p>\n<h2>Tudo começa com uma leitura profunda</h2>\n<div class=\"cols\">\n<div class=\"col\"><p class=\"passo\">1</p><h3>Briefing</h3><p>Você responde 20 perguntas sobre você, o seu negócio, os seus clientes e o seu mercado.</p></div>\n<div class=\"col\"><p class=\"passo\">2</p><h3>Diagnóstico</h3><p>Em até 7 dias, eu entrego a leitura completa e o planejamento estratégico feito para a sua empresa.</p></div>\n<div class=\"col\"><p class=\"passo\">3</p><h3>Aplicação</h3><p>Começam os 2 meses de mentoria: etapa por etapa, aplicando junto comigo.</p></div>\n</div>\n<div class=\"rodape\"><p>Pincelada Anatômica · [Nome da empresa]</p><p>5</p></div>\n</section>", "<section id=\"estudo\" class=\"alt\">\n<p class=\"eyebrow\">Nos 7 dias depois do briefing</p>\n<h2>Como eu estudo o seu negócio</h2>\n<div class=\"cols\">\n<div class=\"col\"><p class=\"passo\">1</p><h3>Leitura</h3><p>Suas respostas viram hipóteses sobre você e sobre o negócio.</p></div>\n<div class=\"col\"><p class=\"passo\">2</p><h3>Dados</h3><p>Procura, concorrência e tendências do seu ramo, sempre com a fonte.</p></div>\n<div class=\"col\"><p class=\"passo\">3</p><h3>Referências</h3><p>Casos que já deram certo: um local, um nacional e um de fora do ramo.</p></div>\n<div class=\"col\"><p class=\"passo\">4</p><h3>Direção</h3><p>A rota feita para você: onde aprofundar e o que aplicar primeiro.</p></div>\n</div>\n<div class=\"rodape\"><p>Pincelada Anatômica · [Nome da empresa]</p><p>6</p></div>\n</section>", "<section id=\"diagnostico\" class=\"alt\">\n<p class=\"eyebrow\">O seu ponto de partida</p>\n<h2>O que o diagnóstico revelou</h2>\n<div class=\"cols\">\n<div class=\"col\"><h3>Retrato de Essência</h3><p>{{retrato}}</p></div>\n<div class=\"col\"><h3>Tese de Valor</h3><p>{{tese}}</p></div>\n<div class=\"col\"><h3>Lacunas prioritárias</h3><p>{{lacunas}}</p></div>\n<div class=\"col\"><h3>Direção recomendada</h3><p>{{direcao}}</p></div>\n</div>\n<div class=\"rodape\"><p>Pincelada Anatômica · [Nome da empresa]</p><p>7</p></div>\n\n</section>", "<section id=\"etapa1\">\n<div class=\"etapa\">\n<div class=\"etapa-esq\">\n<p class=\"eyebrow\">Ler a essência · Semana 1</p>\n<p class=\"num\">01</p>\n<h2>Imersão</h2>\n<p class=\"obj\">Entender quem você é antes de olhar para a empresa.</p>\n</div>\n<div class=\"etapa-dir\">\n<div class=\"bloco\"><h3>O que vamos trabalhar</h3><p>Sua fase de vida, sua forma de agir e de decidir, suas virtudes, habilidades e dons, o que te trava e até onde você pode chegar.</p></div>\n<div class=\"bloco\"><h3>Você vai preencher</h3><p>Mapa de Essência</p></div>\n<div class=\"bloco\"><h3>Você recebe</h3><p>Retrato de Essência: a definição do diferencial que só você tem.</p></div>\n</div>\n</div>\n<div class=\"rodape\"><p>Pincelada Anatômica · [Nome da empresa]</p><p>8</p></div>\n</section>", "<section id=\"e1m\">\n<p class=\"eyebrow\">01 · Imersão</p>\n<h2>Os 4 módulos da Imersão</h2>\n<div class=\"grid2\">\n<div class=\"mod\"><h3>1.1 · Fase de vida</h3><p><span class=\"rot\">Conceito</span> A estratégia certa depende da sua fase.</p><p><span class=\"rot\">Base</span> Leitura dos marcos da sua trajetória</p><p><span class=\"rot\">Você aplica</span> Linha do Tempo da Vida</p></div>\n<div class=\"mod\"><h3>1.2 · Forças e dons</h3><p><span class=\"rot\">Conceito</span> Talento desenvolvido rende mais.</p><p><span class=\"rot\">Base</span> Forças de Caráter VIA e Janela de Johari</p><p><span class=\"rot\">Você aplica</span> Teste VIA e Pesquisa dos 5</p></div>\n<div class=\"mod\"><h3>1.3 · Crenças que limitam</h3><p><span class=\"rot\">Conceito</span> Crenças automáticas decidem por você.</p><p><span class=\"rot\">Base</span> Beck, Dweck, Bandura e o impostor</p><p><span class=\"rot\">Você aplica</span> Mapa de Crenças</p></div>\n<div class=\"mod\"><h3>1.4 · Propósito</h3><p><span class=\"rot\">Conceito</span> Sentido é talento encontrando necessidade.</p><p><span class=\"rot\">Base</span> Ikigai</p><p><span class=\"rot\">Você aplica</span> Propósito e Visão de 3 anos</p></div>\n</div>\n<div class=\"rodape\"><p>Pincelada Anatômica · [Nome da empresa]</p><p>9</p></div>\n</section>", "<section id=\"crencas\" class=\"escuro\">\n<p class=\"eyebrow\">Módulo 1.3</p>\n<h2>O inconsciente também decide</h2>\n<p class=\"lead\">Muitas decisões nascem de crenças formadas cedo e nunca questionadas. Elas viram inseguranças que impedem de cobrar mais, aparecer e crescer.</p>\n<div class=\"cols\">\n<div class=\"col\"><h3>Crenças centrais</h3><p class=\"autor\">Aaron Beck</p><p>Pensamentos automáticos nascem do que acreditamos sobre nós mesmos.</p></div>\n<div class=\"col\"><h3>Fenômeno do impostor</h3><p class=\"autor\">Clance e Imes, 1978</p><p>Pessoas competentes que se sentem uma fraude.</p></div>\n<div class=\"col\"><h3>Mentalidade de crescimento</h3><p class=\"autor\">Carol Dweck, 2006</p><p>Habilidade se desenvolve; não é algo fixo.</p></div>\n<div class=\"col\"><h3>Autoeficácia</h3><p class=\"autor\">Albert Bandura, 1977</p><p>Acreditar na própria capacidade muda o resultado.</p></div>\n</div>\n<div class=\"rodape\"><p>Pincelada Anatômica · [Nome da empresa]</p><p>10</p></div>\n</section>", "<section id=\"etapa2\">\n<div class=\"etapa\">\n<div class=\"etapa-esq\">\n<p class=\"eyebrow\">Ler a essência · Semana 2</p>\n<p class=\"num\">02</p>\n<h2>Tradução</h2>\n<p class=\"obj\">Transformar o que você tem de melhor em vantagem para o seu negócio.</p>\n</div>\n<div class=\"etapa-dir\">\n<div class=\"bloco\"><h3>O que vamos trabalhar</h3><p>Onde a sua essência já aparece no negócio, onde está escondida e onde está sendo desperdiçada.</p></div>\n<div class=\"bloco\"><h3>Você vai preencher</h3><p>Ponte Essência → Negócio</p></div>\n<div class=\"bloco\"><h3>Você recebe</h3><p>Tese de Valor: a frase que explica por que escolhem você.</p></div>\n</div>\n</div>\n<div class=\"rodape\"><p>Pincelada Anatômica · [Nome da empresa]</p><p>11</p></div>\n</section>", "<section id=\"e2m\">\n<p class=\"eyebrow\">02 · Tradução</p>\n<h2>Os 4 módulos da Tradução</h2>\n<div class=\"grid2\">\n<div class=\"mod\"><h3>2.1 · Porquê, como e o quê</h3><p><span class=\"rot\">Conceito</span> As pessoas compram primeiro o porquê.</p><p><span class=\"rot\">Base</span> Círculo Dourado, de Simon Sinek</p><p><span class=\"rot\">Você aplica</span> O Círculo Dourado do seu negócio</p></div>\n<div class=\"mod\"><h3>2.2 · Raio-X do negócio</h3><p><span class=\"rot\">Conceito</span> Poucos produtos geram a maior parte do lucro.</p><p><span class=\"rot\">Base</span> Curva ABC</p><p><span class=\"rot\">Você aplica</span> Tabela de produtos e produto-herói</p></div>\n<div class=\"mod\"><h3>2.3 · Proposta de valor</h3><p><span class=\"rot\">Conceito</span> O cliente contrata uma solução.</p><p><span class=\"rot\">Base</span> Canvas da Proposta de Valor</p><p><span class=\"rot\">Você aplica</span> Dores, ganhos e soluções</p></div>\n<div class=\"mod\"><h3>2.4 · A ponte</h3><p><span class=\"rot\">Conceito</span> Essência vale quando o cliente percebe.</p><p><span class=\"rot\">Base</span> Ponte Essência → Negócio</p><p><span class=\"rot\">Você aplica</span> Tese de Valor</p></div>\n</div>\n<div class=\"rodape\"><p>Pincelada Anatômica · [Nome da empresa]</p><p>12</p></div>\n</section>", "<section id=\"etapa3\">\n<div class=\"etapa\">\n<div class=\"etapa-esq\">\n<p class=\"eyebrow\">Construir a ponte · Semana 3</p>\n<p class=\"num\">03</p>\n<h2>Fundamentos</h2>\n<p class=\"obj\">Entender os três pilares antes de executar qualquer coisa.</p>\n</div>\n<div class=\"etapa-dir\">\n<div class=\"bloco\"><h3>O que vamos trabalhar</h3><p>Posicionamento, copy e distribuição: o que são, como funcionam e por que o seu negócio precisa de cada um.</p></div>\n<div class=\"bloco\"><h3>Você vai preencher</h3><p>Autodiagnóstico dos Pilares</p></div>\n<div class=\"bloco\"><h3>Você recebe</h3><p>Sua nota de 0 a 10 em cada pilar, com a justificativa de cada nota.</p></div>\n</div>\n</div>\n<div class=\"rodape\"><p>Pincelada Anatômica · [Nome da empresa]</p><p>13</p></div>\n</section>", "<section id=\"pilares\" class=\"escuro\">\n<p class=\"eyebrow\">Os três pilares</p>\n<h2>Como a sua essência chega ao mercado</h2>\n<div class=\"cols\">\n<div class=\"col\"><p class=\"passo\">I</p><h3>Posicionamento</h3><p>O lugar que a sua marca ocupa na mente do cliente. É o que faz você ser lembrado, e não comparado por preço.</p></div>\n<div class=\"col\"><p class=\"passo\">II</p><h3>Copy</h3><p>A palavra que vende. É como a sua essência vira mensagem, promessa e convite para comprar.</p></div>\n<div class=\"col\"><p class=\"passo\">III</p><h3>Distribuição</h3><p>Como a mensagem chega às pessoas certas: pelo orgânico (conteúdo, relacionamento, indicação) e pelo pago (anúncios).</p></div>\n</div>\n<div class=\"rodape\"><p>Pincelada Anatômica · [Nome da empresa]</p><p>14</p></div>\n</section>", "<section id=\"e3m\">\n<p class=\"eyebrow\">03 · Fundamentos</p>\n<h2>O que você vai dominar em cada pilar</h2>\n<div class=\"grid3\">\n<div class=\"mod\"><h3>3.1 · Posicionamento</h3><p><span class=\"rot\">Base</span> Ries e Trout, diferenciação, preço e valor percebido</p><p><span class=\"rot\">Você aplica</span> O mapa de posições dos seus concorrentes</p></div>\n<div class=\"mod\"><h3>3.2 · Copy</h3><p><span class=\"rot\">Base</span> Copy em Camadas, níveis de consciência e Cialdini</p><p><span class=\"rot\">Você aplica</span> Reescrever um conteúdo seu com método</p></div>\n<div class=\"mod\"><h3>3.3 · Distribuição</h3><p><span class=\"rot\">Base</span> Funil, demanda ativa e latente, sinais das plataformas</p><p><span class=\"rot\">Você aplica</span> O mapa dos seus canais no funil</p></div>\n</div>\n<p class=\"nota\">Entrega da etapa: Autodiagnóstico dos Pilares, com nota de 0 a 10 e justificativa em cada um.</p>\n<div class=\"rodape\"><p>Pincelada Anatômica · [Nome da empresa]</p><p>15</p></div>\n</section>", "<section id=\"etapa4\">\n<div class=\"etapa\">\n<div class=\"etapa-esq\">\n<p class=\"eyebrow\">Construir a ponte · Semana 4</p>\n<p class=\"num\">04</p>\n<h2>Mapa de Lacunas</h2>\n<p class=\"obj\">Descobrir exatamente o que falta, para agir com precisão e não fazer tudo ao mesmo tempo.</p>\n</div>\n<div class=\"etapa-dir\">\n<div class=\"bloco\"><h3>O que vamos trabalhar</h3><p>Os gargalos de atração, conversão, atendimento, entrega e recompra, e o que já funciona e não precisa ser refeito.</p></div>\n<div class=\"bloco\"><h3>Você vai preencher</h3><p>Matriz de Lacunas</p></div>\n<div class=\"bloco\"><h3>Você recebe</h3><p>As 3 lacunas prioritárias que vão comandar a aplicação.</p></div>\n</div>\n</div>\n<div class=\"rodape\"><p>Pincelada Anatômica · [Nome da empresa]</p><p>16</p></div>\n</section>", "<section id=\"e4m\">\n<p class=\"eyebrow\">04 · Mapa de Lacunas</p>\n<h2>Medir antes de agir</h2>\n<div class=\"grid3\">\n<div class=\"mod\"><h3>4.1 · Auditoria</h3><p><span class=\"rot\">O mentor analisa</span> Instagram, Google, site, WhatsApp e anúncios</p><p><span class=\"rot\">Você recebe</span> Relatório de Auditoria</p></div>\n<div class=\"mod\"><h3>4.2 · Funil em números</h3><p><span class=\"rot\">Base</span> Alcance → contatos → orçamentos → vendas → recompra</p><p><span class=\"rot\">Você aplica</span> Os números do último mês</p></div>\n<div class=\"mod\"><h3>4.3 · Matriz de Lacunas</h3><p><span class=\"rot\">Base</span> Impacto na receita × esforço para resolver</p><p><span class=\"rot\">Entrega</span> As 3 lacunas prioritárias</p></div>\n</div>\n<p class=\"nota\">O que já funciona não é refeito: a aplicação ataca primeiro o que mais trava a receita.</p>\n<div class=\"rodape\"><p>Pincelada Anatômica · [Nome da empresa]</p><p>17</p></div>\n</section>", "<section id=\"etapa5\">\n<div class=\"etapa\">\n<div class=\"etapa-esq\">\n<p class=\"eyebrow\">Construir a ponte · Semana 4</p>\n<p class=\"num\">05</p>\n<h2>Perspectivas</h2>\n<p class=\"obj\">Enxergar os caminhos possíveis no seu ramo e escolher o mais rentável para o seu momento.</p>\n</div>\n<div class=\"etapa-dir\">\n<div class=\"bloco\"><h3>O que vamos trabalhar</h3><p>{{caminhos}}: o que cada caminho exige de tempo, verba e presença, e o que entrega.</p></div>\n<div class=\"bloco\"><h3>Você vai preencher</h3><p>Quadro de Perspectivas</p></div>\n<div class=\"bloco\"><h3>Você recebe</h3><p>Direção Estratégica: o caminho escolhido e o que fica para depois.</p></div>\n</div>\n</div>\n<div class=\"rodape\"><p>Pincelada Anatômica · [Nome da empresa]</p><p>18</p></div>\n\n</section>", "<section id=\"e5m\">\n<p class=\"eyebrow\">05 · Perspectivas</p>\n<h2>Decisão com dado, não com achismo</h2>\n<div class=\"grid2\">\n<div class=\"mod\"><h3>5.1 · Leitura de mercado</h3><p><span class=\"rot\">O mentor traz</span> Procura, concorrência e consumidor</p><p><span class=\"rot\">Sempre com</span> Fonte e data de cada dado</p></div>\n<div class=\"mod\"><h3>5.2 · Casos que deram certo</h3><p><span class=\"rot\">O mentor traz</span> 3 referências adaptáveis</p><p><span class=\"rot\">Você escolhe</span> A que combina com a sua essência</p></div>\n<div class=\"mod\"><h3>5.3 · Os caminhos</h3><p><span class=\"rot\">Opções</span> {{caminhos}}</p><p><span class=\"rot\">Você avalia</span> Prós, contras, investimento e prazo</p></div>\n<div class=\"mod\"><h3>5.4 · A escolha</h3><p><span class=\"rot\">Critérios</span> Essência, caixa, tempo e potencial</p><p><span class=\"rot\">Entrega</span> Direção Estratégica</p></div>\n</div>\n<div class=\"rodape\"><p>Pincelada Anatômica · [Nome da empresa]</p><p>19</p></div>\n\n</section>", "<section id=\"etapa6\">\n<div class=\"etapa\">\n<div class=\"etapa-esq\">\n<p class=\"eyebrow\">Empacotar para o mercado · Semanas 5 a 7</p>\n<p class=\"num\">06</p>\n<h2>Empacotamento</h2>\n<p class=\"obj\">Transformar a sua essência em uma marca que atrai audiência e valor percebido.</p>\n</div>\n<div class=\"etapa-dir\">\n<div class=\"bloco\"><h3>O que vamos trabalhar</h3><p>Declaração de posicionamento, promessa central, bio, mensagens-chave, roteiros, calendário de conteúdo e a primeira campanha de anúncios.</p></div>\n<div class=\"bloco\"><h3>Você vai preencher</h3><p>Kit de Marca e Plano de Distribuição</p></div>\n<div class=\"bloco\"><h3>Você recebe</h3><p>Sua marca empacotada e a primeira campanha no ar.</p></div>\n</div>\n</div>\n<div class=\"rodape\"><p>Pincelada Anatômica · [Nome da empresa]</p><p>20</p></div>\n</section>", "<section id=\"e6a\">\n<p class=\"eyebrow\">06 · Empacotamento · Bloco 6A</p>\n<h2>Posicionamento aplicado</h2>\n<div class=\"grid2\">\n<div class=\"mod\"><h3>Porquê, como e o quê</h3><p>O Círculo Dourado refinado com os dados das Etapas 4 e 5.</p></div>\n<div class=\"mod\"><h3>Declaração de posicionamento</h3><p>Para [público] que [necessidade], a [empresa] é a [categoria] que [diferencial], porque [prova].</p></div>\n<div class=\"mod\"><h3>Personalidade da marca</h3><p>Arquétipo, tom de voz em 3 palavras e as palavras que a marca usa e evita.</p></div>\n<div class=\"mod\"><h3>Territórios e provas</h3><p>De 3 a 5 temas de conteúdo e um banco de depoimentos, números e bastidores.</p></div>\n</div>\n<div class=\"rodape\"><p>Pincelada Anatômica · [Nome da empresa]</p><p>21</p></div>\n</section>", "<section id=\"colinha\" class=\"escuro\">\n<p class=\"eyebrow\">06 · Empacotamento · Bloco 6B</p>\n<h2>Copy em Camadas: como nasce qualquer copy</h2>\n<table class=\"tab-escura\">\n<tr><th>Bloco</th><th>Para que serve</th></tr>\n<tr><td class=\"sem\">1 · Chamada</td><td>Quebra de padrão e identificação inicial</td></tr>\n<tr><td class=\"sem\">2 · Desenvolvimento</td><td>Conexão emocional e amplificação</td></tr>\n<tr><td class=\"sem\">3 · Educação</td><td>Autoridade conceitual</td></tr>\n<tr><td class=\"sem\">4 · Reestruturação</td><td>Muda a forma como a pessoa enxerga o problema</td></tr>\n<tr><td class=\"sem\">5 · Solução prática</td><td>Reduz o atrito para agir</td></tr>\n<tr><td class=\"sem\">6 · Convite e autoridade</td><td>Chamada para ação sutil e estratégica</td></tr>\n<tr><td class=\"sem\">7 · Fechamento</td><td>Encerramento positivo</td></tr>\n</table>\n<p class=\"nota\">Versão curta, para peças rápidas: quebra de padrão → identificação → reenquadramento → direção.</p>\n<div class=\"rodape\"><p>Pincelada Anatômica · [Nome da empresa]</p><p>22</p></div>\n</section>", "<section id=\"e6b\" class=\"alt\">\n<p class=\"eyebrow\">06 · Empacotamento · Bloco 6B</p>\n<h2>Copy em cada formato</h2>\n<table>\n<tr><th>Formato</th><th>O que você aprende</th><th>Você produz</th></tr>\n<tr><td class=\"sem\">Bio e perfil</td><td>Quem é, para quem e o que entrega</td><td>Bio nova</td></tr>\n<tr><td class=\"sem\">Stories</td><td>Sequência de conexão, conteúdo, prova e oferta</td><td>1 sequência</td></tr>\n<tr><td class=\"sem\">Reels</td><td>Gancho, retenção e chamada</td><td>3 roteiros</td></tr>\n<tr><td class=\"sem\">Anúncios</td><td>Valor, prova e oferta, conforme o funil</td><td>3 criativos</td></tr>\n<tr><td class=\"sem\">Vídeo longo</td><td>Autoridade com aula ou entrevista</td><td>1 roteiro</td></tr>\n<tr><td class=\"sem\">VSL</td><td>Do gancho à garantia</td><td>1 roteiro</td></tr>\n<tr><td class=\"sem\">WhatsApp</td><td>Atendimento, objeções e retorno</td><td>1 roteiro</td></tr>\n<tr><td class=\"sem\">Página</td><td>Promessa, prova e oferta</td><td>Texto da página</td></tr>\n<tr><td class=\"sem\">Guerrilha</td><td>Impacto local com baixo custo</td><td>2 ações</td></tr>\n</table>\n<div class=\"rodape\"><p>Pincelada Anatômica · [Nome da empresa] · Os formatos entram conforme o seu negócio</p><p>23</p></div>\n\n</section>", "<section id=\"e6c\" class=\"escuro\">\n<p class=\"eyebrow\">06 · Empacotamento · Bloco 6C</p>\n<h2>Distribuição: orgânico e tráfego pago</h2>\n<div class=\"cols\">\n<div class=\"col\"><h3>Orgânico</h3><p>Linha editorial para atrair, conectar e vender; calendário; Google; parcerias e indicação.</p></div>\n<div class=\"col\"><p class=\"passo\">1</p><h3>Entender o tráfego</h3><p>Leilão, objetivos, quanto investir e o que é um bom resultado no seu ramo.</p></div>\n<div class=\"col\"><p class=\"passo\">2</p><h3>A sua estratégia</h3><p>Oferta, públicos frio, morno e quente, criativos e verba.</p></div>\n<div class=\"col\"><p class=\"passo\">3</p><h3>A aplicação com IA</h3><p>A campanha montada por uma ferramenta de IA conectada ao Gerenciador, com a sua aprovação.</p></div>\n</div>\n<p class=\"nota\">Entrega: a primeira campanha montada e publicada junto, na sua conta.</p>\n<div class=\"rodape\"><p>Pincelada Anatômica · [Nome da empresa]</p><p>24</p></div>\n</section>", "<section id=\"trafego\">\n<p class=\"eyebrow\">06 · Empacotamento · Bloco 6C</p>\n<h2>Para que serve o tráfego pago</h2>\n<p class=\"lead\">Tráfego pago é distribuição comprada: leva a mensagem certa a mais pessoas certas, mais rápido. Antes de mexer na ferramenta, você entende três ideias.</p>\n<div class=\"cols\">\n<div class=\"col\"><p class=\"passo\">1</p><h3>É um leilão de atenção</h3><p>Você disputa espaço com outros anunciantes. O anúncio mais relevante para a pessoa tende a pagar menos.</p></div>\n<div class=\"col\"><p class=\"passo\">2</p><h3>O objetivo guia o algoritmo</h3><p>O objetivo que você escolhe diz à plataforma quem procurar: quem assiste, quem clica, quem chama ou quem compra.</p></div>\n<div class=\"col\"><p class=\"passo\">3</p><h3>Cada etapa, um anúncio</h3><p>Quem não conhece precisa de valor. Quem já conhece precisa de prova. Quem está pronto precisa de oferta.</p></div>\n</div>\n<div class=\"rodape\"><p>Pincelada Anatômica · [Nome da empresa]</p><p>25</p></div>\n</section>", "<section id=\"funil\" class=\"alt\">\n<p class=\"eyebrow\">06 · Empacotamento · Bloco 6C</p>\n<h2>O funil da plataforma</h2>\n<table>\n<tr><th>Etapa do funil</th><th>Público</th><th>Objetivos na Meta</th><th>Para que serve</th></tr>\n<tr><td class=\"sem\">Topo</td><td>Frio: ainda não conhece</td><td>Reconhecimento · Engajamento</td><td>Ser visto, gerar interação e formar público</td></tr>\n<tr><td class=\"sem\">Meio</td><td>Morno: já interagiu</td><td>Tráfego · Cadastros</td><td>Levar ao perfil, ao site ou ao WhatsApp e captar contatos</td></tr>\n<tr><td class=\"sem\">Fundo</td><td>Quente: está pronto</td><td>Vendas</td><td>Converter quem já demonstrou interesse (remarketing)</td></tr>\n</table>\n<p class=\"nota\">O Gerenciador de Anúncios tem 6 objetivos. O sexto, Promoção do app, só se usa quando o negócio tem aplicativo. Google Ads entra quando há procura ativa no Google.</p>\n<div class=\"rodape\"><p>Pincelada Anatômica · [Nome da empresa]</p><p>26</p></div>\n</section>", "<section id=\"anuncios\">\n<p class=\"eyebrow\">06 · Empacotamento · Copy de anúncio</p>\n<h2>Anúncios conforme o funil: valor antes do pedido</h2>\n<div class=\"grid3\">\n<div class=\"mod\"><h3>Topo · Anúncio de valor</h3><p>Ensina, provoca ou entretém, sem pedir nada. Gera confiança e público.</p><p><span class=\"rot\">Colinha</span> Chamada, desenvolvimento, educação e reestruturação</p></div>\n<div class=\"mod\"><h3>Meio · Anúncio de prova</h3><p>Bastidores, casos, depoimentos e o seu método em ação.</p><p><span class=\"rot\">Colinha</span> Educação, solução prática e convite</p></div>\n<div class=\"mod\"><h3>Fundo · Anúncio direto</h3><p>Oferta clara, motivo para agir agora e chamada objetiva.</p><p><span class=\"rot\">Colinha</span> Solução prática, convite e fechamento</p></div>\n</div>\n<p class=\"nota\">Você aplica: um criativo para cada etapa do funil, escrito com a colinha e revisado pelo mentor.</p>\n<div class=\"rodape\"><p>Pincelada Anatômica · [Nome da empresa]</p><p>27</p></div>\n</section>", "<section id=\"ia\" class=\"escuro\">\n<p class=\"eyebrow\">06 · Empacotamento · Aplicação</p>\n<h2>Tráfego com inteligência artificial</h2>\n<p class=\"lead\">A campanha é montada com uma ferramenta de IA conectada ao Gerenciador de Anúncios. Você decide; a IA executa o trabalho técnico.</p>\n<div class=\"cols\">\n<div class=\"col\"><p class=\"passo\">1</p><h3>Você informa</h3><p>Objetivo, oferta, público, criativos e verba.</p></div>\n<div class=\"col\"><p class=\"passo\">2</p><h3>A IA monta</h3><p>Estrutura da campanha, públicos e variações de anúncio.</p></div>\n<div class=\"col\"><p class=\"passo\">3</p><h3>Você aprova</h3><p>Revisa o que foi montado antes de publicar.</p></div>\n<div class=\"col\"><p class=\"passo\">4</p><h3>Você acompanha</h3><p>Lê CPM, CTR, custo por resultado, frequência e ROAS.</p></div>\n</div>\n<div class=\"rodape\"><p>Pincelada Anatômica · [Nome da empresa]</p><p>28</p></div>\n</section>", "<section id=\"etapa7\">\n<div class=\"etapa\">\n<div class=\"etapa-esq\">\n<p class=\"eyebrow\">Empacotar para o mercado · Semana 8</p>\n<p class=\"num\">07</p>\n<h2>Rota de Receita</h2>\n<p class=\"obj\">Garantir que a aplicação vire faturamento e que você siga com autonomia.</p>\n</div>\n<div class=\"etapa-dir\">\n<div class=\"bloco\"><h3>O que vamos trabalhar</h3><p>Os resultados das primeiras ações, os indicadores de alcance, contatos, conversão e custo por cliente, e os ajustes necessários.</p></div>\n<div class=\"bloco\"><h3>Você vai preencher</h3><p>Painel de Indicadores e Plano de 90 Dias</p></div>\n<div class=\"bloco\"><h3>Você recebe</h3><p>Uma rotina de marketing que você consegue manter sozinho.</p></div>\n</div>\n</div>\n<div class=\"rodape\"><p>Pincelada Anatômica · [Nome da empresa]</p><p>29</p></div>\n</section>", "<section id=\"e7m\">\n<p class=\"eyebrow\">07 · Rota de Receita</p>\n<h2>Da aplicação à autonomia</h2>\n<div class=\"grid3\">\n<div class=\"mod\"><h3>7.1 · Leitura de resultados</h3><p><span class=\"rot\">Base</span> Métricas do Instagram e do Gerenciador</p><p><span class=\"rot\">Você aplica</span> Painel de Indicadores, antes e agora</p></div>\n<div class=\"mod\"><h3>7.2 · Ajuste e teste</h3><p><span class=\"rot\">Base</span> Testes A/B de gancho, criativo, oferta e público</p><p><span class=\"rot\">Você aplica</span> 2 testes em andamento</p></div>\n<div class=\"mod\"><h3>7.3 · Rotina</h3><p><span class=\"rot\">Base</span> Planejar, produzir, publicar e medir</p><p><span class=\"rot\">Você aplica</span> Rotina semanal e Plano de 90 Dias</p></div>\n</div>\n<div class=\"rodape\"><p>Pincelada Anatômica · [Nome da empresa]</p><p>30</p></div>\n</section>", "<section id=\"cronograma\" class=\"alt\">\n<p class=\"eyebrow\">Cronograma</p>\n<h2>Semana a semana</h2>\n<table>\n<tr><th>Quando</th><th>Etapa</th><th>Entrega</th></tr>\n<tr><td class=\"sem\">Até 7 dias</td><td>Briefing e diagnóstico</td><td>Planejamento estratégico da [empresa]</td></tr>\n<tr><td class=\"sem\">Semana 1</td><td>01 · Imersão</td><td>Retrato de Essência</td></tr>\n<tr><td class=\"sem\">Semana 2</td><td>02 · Tradução</td><td>Tese de Valor</td></tr>\n<tr><td class=\"sem\">Semana 3</td><td>03 · Fundamentos</td><td>Autodiagnóstico dos Pilares</td></tr>\n<tr><td class=\"sem\">Semana 4</td><td>04 · Mapa de Lacunas e 05 · Perspectivas</td><td>3 lacunas prioritárias e Direção Estratégica</td></tr>\n<tr><td class=\"sem\">Semanas 5 a 7</td><td>06 · Empacotamento</td><td>Kit de Marca, Plano de Distribuição e campanha no ar</td></tr>\n<tr><td class=\"sem\">Semana 8</td><td>07 · Rota de Receita</td><td>Painel de Indicadores e Plano de 90 Dias</td></tr>\n</table>\n<div class=\"rodape\"><p>Pincelada Anatômica · [Nome da empresa]</p><p>31</p></div>\n</section>", "<section id=\"compromissos\">\n<p class=\"eyebrow\">O nosso acordo</p>\n<h2>O que cada um traz para a mentoria</h2>\n<div class=\"cols\">\n<div class=\"col\"><h3>Você recebe</h3><p>Diagnóstico e planejamento estratégico feitos para a sua empresa<br>{{encontros}}<br>Material de apoio em cada etapa<br>Revisão das suas entregas</p></div>\n<div class=\"col\"><h3>A mentoria pede de você</h3><p>{{horas}}<br>Fichas preenchidas antes de cada encontro<br>Disposição para aparecer nos conteúdos<br>Verba de anúncios a partir da etapa 6</p></div>\n<div class=\"col\"><h3>Flexibilidade</h3><p>Até 2 pausas durante o período, para férias ou compromissos pessoais, sem perder nenhuma etapa.</p></div>\n</div>\n<div class=\"rodape\"><p>Pincelada Anatômica · [Nome da empresa]</p><p>32</p></div>\n</section>", "<section id=\"fechamento\" class=\"cor\">\n<p class=\"eyebrow\">Próximo passo</p>\n<p class=\"tese\">A sua pincelada já existe. Agora ela vai para o mercado.</p>\n<p class=\"lead\">Primeiro encontro: [data e horário] · [link ou local]</p>\n<div class=\"rodape\"><p>[Seu nome] · [WhatsApp] · [@instagram]</p><p>33</p></div>\n</section>"];
+  const BRIEFING = [["Sobre você", ["Conte sua história em poucas linhas: de onde veio, como chegou até aqui e em que fase da vida sente que está hoje.", "O que as pessoas mais elogiam em você, e em que situações costumam te procurar?", "O que você faz com facilidade e que os outros acham difícil?", "Quando pensa em crescer, cobrar mais ou aparecer, o que passa pela sua cabeça? O que você evita fazer, mesmo sabendo que deveria?", "Qual foi a maior dificuldade que você já superou, e o que ela te ensinou?", "Daqui a 3 anos, como seria a sua vida ideal, pessoal e profissional?"]], ["O seu negócio", ["Nome da empresa, cidade e bairro, há quanto tempo existe e por que você a abriu.", {"produtos": "Seus principais produtos, com o preço de cada um. Qual vende mais, qual dá mais lucro e quantos itens você tem no total?", "servicos": "Seus principais serviços, como cada um é entregue, o preço e o tempo que leva. Qual é o mais procurado e qual dá mais lucro?"}, {"produtos": "Faturamento mensal médio (aproximado), valor médio por venda e meta para os próximos 12 meses.", "servicos": "Faturamento mensal médio (aproximado), quantos atendimentos você consegue fazer por mês e meta para os próximos 12 meses."}, "Quem trabalha com você, e quem cuida do marketing hoje?", "Por que os clientes compram de você e não do concorrente? Que provas você tem (depoimentos, avaliações, antes e depois)?", "Quais são os meses mais fortes e os mais fracos do ano?"]], ["Clientes e vendas", ["Descreva o seu melhor cliente e o problema ou desejo que leva ele até você.", "Quais dúvidas e objeções você mais escuta, e por que alguns desistem de comprar?", {"produtos": "Como os clientes chegam até você hoje (loja, site, WhatsApp, marketplace)? Quantos contatos recebe por mês, e quantos compram?", "servicos": "Como os clientes chegam até você hoje? Quantos pedem orçamento ou agendam por mês, e quantos fecham?"}]], ["Marketing e mercado", ["Quais canais você usa hoje (Instagram, Google, site, WhatsApp, outros)? Informe @ e links. Você aparece nos conteúdos?", "Já fez anúncios pagos? Quanto investiu, quem gerenciou e qual foi o resultado?", "Quem são os seus 3 principais concorrentes (@ ou site), e o que eles fazem bem ou mal?"]], ["Compromisso", ["Quantas horas por semana você consegue dedicar à mentoria, e quanto pode investir por mês em anúncios?", "Qual resultado, ao fim dos 2 meses, faria você dizer que a mentoria valeu a pena?"]]];
+  function perguntasBriefing() {
+    const rem = (C.briefing.remover || []).map(Number);
+    let orig = 0, n = 0;
+    const partes = BRIEFING.map(([parte, qs]) => [parte, qs.map(q => { orig++; return { k: 'b' + orig, o: orig, q: typeof q === 'string' ? q : (q[C.tipo] || q.produtos) }; }).filter(x => !rem.includes(x.o))]);
+    const ex = (C.briefing.extras || []).filter(q => (q || '').trim()).map((q, i) => ({ k: 'bx' + (i + 1), q }));
+    if (ex.length) partes.push(['Perguntas do seu negócio', ex]);
+    partes.forEach(([, qs]) => qs.forEach(x => { n++; x.n = n; }));
+    return partes.filter(([, qs]) => qs.length);
+  }
+  const chavesBriefing = () => perguntasBriefing().flatMap(([, qs]) => qs.map(x => [x.k, x.n + '. ' + x.q]));
+  const pctBriefing = () => pctDe(chavesBriefing());
+  function trocar(html) {
+    const ap = C.apresentacao || {};
+    return html.split('[Nome da empresa]').join(C.empresa).split('[Nome do mentorado]').join(C.mentorado)
+      .split('[Seu nome]').join(C.mentor).split('[data e horário] · [link ou local]').join(C.primeiroEncontro)
+      .split('[Nome]').join(C.mentorado).split('[empresa]').join(C.empresa)
+      .split('{{retrato}}').join(ap.retrato || '[em preparação]').split('{{tese}}').join(ap.tese || '[em preparação]')
+      .split('{{lacunas}}').join((ap.lacunas || []).filter(Boolean).map((l, i) => (i + 1) + '. ' + l).join('<br>') || '[em preparação]')
+      .split('{{direcao}}').join(ap.direcao || '[em preparação]')
+      .split('{{encontros}}').join(ap.encontros || 'Encontros de acompanhamento').split('{{horas}}').join(ap.horas || 'Horas semanais de dedicação')
+      .split('{{caminhos}}').join(C.perspectivas.join(', '));
+  }
+  let slideAtual = 0;
+  function telaApresentacao() {
+    if (!C.apresentacao.liberada) return el('div', {},
+      el('div', { class: 'etapa-cab' }, el('div', { class: 'eyebrow' }, 'Parte 2'), el('h1', {}, 'Sua apresentação'),
+        el('p', { class: 'objetivo' }, 'Ela é montada a partir do seu briefing: com as suas respostas, eu estudo o seu negócio e preparo a apresentação do que vamos construir. Ela aparece aqui assim que estiver pronta.')),
+      el('div', { class: 'mentor' }, el('div', { class: 'lbl' }, pctBriefing() < 100 ? 'Primeiro passo: responder o briefing' : 'Briefing recebido. Sua apresentação está em preparação.', badge('M'))),
+      pctBriefing() < 100 ? el('div', { class: 'acoes' }, el('a', { class: 'btn ouro', href: '#briefing' }, 'Responder o briefing →')) : '');
+    const inner = el('div', { class: 'palco-in' });
+    const palco = el('div', { class: 'palco', role: 'region', 'aria-label': 'Apresentação da mentoria' }, inner);
+    const cont = el('span', { class: 'contador' });
+    const dots = el('div', { class: 'miniaturas' });
+    function escala() { const w = palco.clientWidth; if (w) inner.style.transform = `scale(${w / 1920})`; }
+    function mostrarSlide(i) {
+      slideAtual = Math.max(0, Math.min(SLIDES.length - 1, i));
+      inner.innerHTML = trocar(SLIDES[slideAtual]);
+      const sec = inner.firstElementChild;
+      if (sec) { sec.style.setProperty('--escuro', C.cores.escuro); sec.style.setProperty('--claro', C.cores.claro); sec.style.setProperty('--claro2', C.cores.claro2); sec.style.setProperty('--destaque', C.cores.destaque); sec.style.setProperty('--destaque-texto', C.cores.destaqueTexto); }
+      cont.textContent = (slideAtual + 1) + ' / ' + SLIDES.length;
+      dots.querySelectorAll('.mini-dot').forEach((d, j) => d.classList.toggle('on', j === slideAtual));
+      escala();
+    }
+    SLIDES.forEach((_, j) => dots.append(el('button', { class: 'mini-dot', type: 'button', 'aria-label': 'Slide ' + (j + 1), onclick: () => mostrarSlide(j) })));
+    const wrap = el('div', {},
+      el('div', { class: 'etapa-cab' }, el('div', { class: 'eyebrow' }, 'Parte 2'), el('h1', {}, 'O que vamos construir juntos'),
+        el('p', { class: 'objetivo' }, 'A apresentação completa da sua mentoria. Use as setas para avançar.')),
+      palco,
+      el('div', { class: 'controles' },
+        el('button', { class: 'btn sec', type: 'button', onclick: () => mostrarSlide(slideAtual - 1) }, '← Anterior'),
+        cont,
+        el('button', { class: 'btn', type: 'button', onclick: () => mostrarSlide(slideAtual + 1) }, 'Próximo →')),
+      dots,
+      el('div', { class: 'acoes', style: 'justify-content:center' }, el('a', { class: 'btn ouro', href: '#etapa-1' }, 'Seguir para a aplicação →')));
+    teclado = e => { if (e.key === 'ArrowRight') mostrarSlide(slideAtual + 1); if (e.key === 'ArrowLeft') mostrarSlide(slideAtual - 1); };
+    setTimeout(() => { mostrarSlide(slideAtual); if (window.ResizeObserver) new ResizeObserver(escala).observe(palco); }, 0);
+    return wrap;
+  }
+  let teclado = null;
+  document.addEventListener('keydown', e => { if (teclado && !/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) teclado(e); });
+  function telaBriefing() {
+    return el('div', {},
+      el('div', { class: 'etapa-cab' }, el('div', { class: 'eyebrow' }, 'Parte 1'), el('h1', {}, 'Briefing'),
+        el('p', { class: 'objetivo' }, 'O ponto de partida de tudo. Com as suas respostas, eu estudo o seu negócio e preparo a sua apresentação e o seu planejamento. Leva cerca de 30 minutos; números podem ser aproximados.')),
+      el('div', { class: 'barra-geral' }, el('div', { class: 'barra' }, el('div', { id: 'barraBriefing', style: `width:${pctBriefing()}%` })), el('span', { id: 'pctBriefing' }, pctBriefing() + '% respondido')),
+      perguntasBriefing().map(([parte, qs], pi) => el('div', { class: 'parte' }, el('h2', {}, `${pi + 1} · ${parte}`),
+        qs.map(x => el('div', { class: 'campo' }, el('div', { class: 'lbl' }, x.n + '. ' + x.q), entrada(x.k, '', true, x.q))))),
+      el('p', { class: 'aviso' }, 'Os prints do Instagram e o logo da marca você me entrega no primeiro encontro.'),
+      el('div', { class: 'acoes' }, el('span', { class: 'espaco' }), el('a', { class: 'btn ouro', href: '#apresentacao' }, 'Concluir briefing →')));
+  }
+
+  /* ---------- telas ---------- */
+  function telaInicio() {
+    const pa = Math.round(STAGES.reduce((t, s) => t + pct(s), 0) / STAGES.length);
+    return el('div', { class: 'boas' },
+      el('div', { class: 'eyebrow' }, 'Seu portal de mentoria'),
+      el('h1', {}, 'Olá, ' + C.mentorado + '.'),
+      el('p', { class: 'objetivo' }, 'Tudo da sua mentoria em um só lugar. Primeiro o seu briefing; com ele eu preparo a sua apresentação; depois vem a aplicação, etapa por etapa.'),
+      el('div', { class: 'portal-cards' },
+        el('a', { class: 'pcard', href: '#briefing' }, el('span', { class: 'n' }, '1'), el('h3', {}, 'Briefing'), el('p', {}, 'As perguntas que dão início a tudo. Comece por aqui.'), el('span', { class: 'pct' }, pctBriefing() + '% respondido')),
+        el('a', { class: 'pcard', href: '#apresentacao' }, el('span', { class: 'n' }, '2'), el('h3', {}, 'Apresentação'), el('p', {}, 'O que vamos construir para você, montado a partir do seu briefing.'), el('span', { class: 'pct' }, C.apresentacao.liberada ? 'Disponível' : 'Em preparação')),
+        el('a', { class: 'pcard', href: '#etapa-1' }, el('span', { class: 'n' }, '3'), el('h3', {}, 'Aplicação'), el('p', {}, 'As fichas de cada etapa, preenchidas ao longo dos 2 meses.'), el('span', { class: 'pct' }, pa + '% preenchido'))),
+      el('div', { class: 'legenda' }, 'Na aplicação, cada campo mostra quem preenche:', badge('P'), badge('J'), badge('M')));
+  }
+  function telaEtapa(s) {
+    const i = STAGES.indexOf(s);
+    return el('div', {},
+      el('div', { class: 'etapa-cab' },
+        el('div', { class: 'eyebrow' }, MOVS[s.mov] + ' · ' + s.semana),
+        el('h1', {}, el('span', { class: 'num' }, String(s.id).padStart(2, '0') + ' '), s.nome),
+        el('p', { class: 'objetivo' }, s.objetivo)),
+      el('div', { class: 'legenda' }, 'Quem preenche:', badge('P'), badge('J'), badge('M')),
+      el('div', { class: 'barra-geral' }, el('div', { class: 'barra' }, el('div', { id: 'barraEtapa', style: `width:${pct(s)}%` })), el('span', { id: 'pctEtapa' }, pct(s) + '% preenchido')),
+      s.mods.map((m, mi) => {
+        const d = el('details', { class: 'modulo' },
+          el('summary', {}, el('span', { class: 'mod-tit' }, el('span', { class: 'mod-num' }, m.n + ' '), m.nome), el('span', { class: 'mod-pct' }, el('span', { 'data-mod': m.n }, pctDe(chavesMod(m)) + '%'), el('span', { class: 'seta' }, '›'))),
+          el('div', { class: 'mod-corpo' },
+            el('div', { class: 'teoria' }, el('p', {}, el('b', {}, 'Conceito: '), m.conceito), el('p', {}, el('b', {}, 'Base de estudo: '), m.base)),
+            notaModulo(m.n),
+            m.fields.map(renderCampo)));
+        if (mi === 0) d.open = true;
+        return d;
+      }),
+      el('div', { class: 'acoes' },
+        i > 0 ? el('button', { class: 'btn sec', type: 'button', onclick: () => { location.hash = 'etapa-' + STAGES[i - 1].id; } }, '← Etapa anterior') : null,
+        el('span', { class: 'espaco' }),
+        i < STAGES.length - 1 ? el('button', { class: 'btn', type: 'button', onclick: () => { location.hash = 'etapa-' + STAGES[i + 1].id; } }, 'Próxima etapa →') : el('button', { class: 'btn', type: 'button', onclick: () => { location.hash = 'resumo'; } }, 'Ver resumo →')),
+      el('p', { class: 'aviso' }, 'Tudo o que você escreve fica salvo aqui, na sua página.'));
+  }
+  function telaResumo() {
+    return el('div', {},
+      el('div', { class: 'etapa-cab' }, el('div', { class: 'eyebrow' }, 'Visão geral'), el('h1', {}, 'Seu caderno completo'),
+        el('p', { class: 'objetivo' }, 'Tudo o que você construiu na mentoria, em um só lugar.')),
+      el('div', { class: 'res-bloco' }, el('h3', {}, `Briefing (${pctBriefing()}%)`),
+        (() => { const ks = chavesBriefing().filter(([k]) => preenchido(k)); return ks.length ? ks.map(([k, l]) => el('p', { class: 'res-linha' }, el('b', {}, l + ' '), mostrar(k))) : el('p', { class: 'res-linha vazio' }, 'Ainda não respondido.'); })()),
+      STAGES.map(s => el('div', { class: 'res-bloco' },
+        el('h3', {}, `${String(s.id).padStart(2, '0')} · ${s.nome} (${pct(s)}%)`),
+        (() => { const ks = chavesEtapa(s).filter(([k]) => preenchido(k)); return ks.length ? ks.map(([k, l]) => el('p', { class: 'res-linha' }, el('b', {}, l + ': '), mostrar(k))) : el('p', { class: 'res-linha vazio' }, 'Ainda não preenchida.'); })())));
+  }
+
+  function rota() {
+    const h = (location.hash || '').replace('#', '');
+    const m = /^etapa-(\d)$/.exec(h);
+    const s = m && STAGES.find(x => x.id === Number(m[1]));
+    atual = s ? h : (['resumo', 'apresentacao', 'briefing'].includes(h) ? h : 'inicio');
+    teclado = null;
+    const telas = { resumo: telaResumo, apresentacao: telaApresentacao, briefing: telaBriefing, inicio: telaInicio };
+    const main = document.getElementById('main');
+    main.classList.toggle('largo', atual === 'apresentacao');
+    main.replaceChildren(s ? telaEtapa(s) : telas[atual]());
+    const aba = s || atual === 'resumo' ? 'aplicacao' : atual;
+    document.querySelectorAll('.aba').forEach(a => a.classList.toggle('on', a.getAttribute('data-aba') === aba));
+    document.querySelector('nav.fluxo').hidden = aba !== 'aplicacao';
+    renderFluxo();
+    const ativo = document.querySelector('.no.ativa'); if (ativo) ativo.scrollIntoView({ block: 'nearest', inline: 'center' });
+    window.scrollTo(0, 0);
+  }
+  window.addEventListener('hashchange', rota);
+  rota();
+})();
+</script>
+</body>
+</html>

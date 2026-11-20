@@ -1,0 +1,237 @@
+{
+  "cliente": {
+    "mentorado": "[Nome do mentorado]",
+    "empresa": "[Nome da empresa]",
+    "tipo": "produtos",
+    "mentor": "Lucas",
+    "primeiroEncontro": "[data e horário] · [link ou local]",
+    "cores": {
+      "escuro": "#17181D",
+      "claro": "#F6F3EE",
+      "claro2": "#ECE6DC",
+      "destaque": "#B8894A",
+      "destaqueTexto": "#835C28"
+    }
+  },
+  "briefing": {
+    "extras": [],
+    "remover": []
+  },
+  "apresentacao": {
+    "liberada": false,
+    "retrato": "",
+    "tese": "",
+    "lacunas": [
+      "",
+      "",
+      ""
+    ],
+    "direcao": "",
+    "encontros": "",
+    "horas": ""
+  },
+  "aplicacao": {
+    "caminhos": [
+      "Alcance orgânico",
+      "Autoridade e branding",
+      "Demanda paga",
+      "Reposicionamento"
+    ],
+    "formatos": [
+      "Bio e perfil",
+      "Stories",
+      "Reels",
+      "Vídeo longo",
+      "VSL",
+      "WhatsApp",
+      "Página ou site"
+    ]
+  },
+  "mentor": {
+    "modulos": {
+      "1.1": {
+        "texto": "",
+        "porque": ""
+      },
+      "1.2": {
+        "texto": "",
+        "porque": ""
+      },
+      "1.3": {
+        "texto": "",
+        "porque": ""
+      },
+      "1.4": {
+        "texto": "",
+        "porque": ""
+      },
+      "2.1": {
+        "texto": "",
+        "porque": ""
+      },
+      "2.2": {
+        "texto": "",
+        "porque": ""
+      },
+      "2.3": {
+        "texto": "",
+        "porque": ""
+      },
+      "2.4": {
+        "texto": "",
+        "porque": ""
+      },
+      "3.1": {
+        "texto": "",
+        "porque": ""
+      },
+      "3.2": {
+        "texto": "",
+        "porque": ""
+      },
+      "3.3": {
+        "texto": "",
+        "porque": ""
+      },
+      "4.1": {
+        "texto": "",
+        "porque": ""
+      },
+      "4.2": {
+        "texto": "",
+        "porque": ""
+      },
+      "4.3": {
+        "texto": "",
+        "porque": ""
+      },
+      "5.1": {
+        "texto": "",
+        "porque": ""
+      },
+      "5.2": {
+        "texto": "",
+        "porque": ""
+      },
+      "5.3": {
+        "texto": "",
+        "porque": ""
+      },
+      "5.4": {
+        "texto": "",
+        "porque": ""
+      },
+      "6A": {
+        "texto": "",
+        "porque": ""
+      },
+      "6B": {
+        "texto": "",
+        "porque": ""
+      },
+      "6C": {
+        "texto": "",
+        "porque": ""
+      },
+      "7.1": {
+        "texto": "",
+        "porque": ""
+      },
+      "7.2": {
+        "texto": "",
+        "porque": ""
+      },
+      "7.3": {
+        "texto": "",
+        "porque": ""
+      }
+    },
+    "raiox": "",
+    "concorrentes": "",
+    "auditoria": "",
+    "funil": "",
+    "mercado": "",
+    "casos": "",
+    "resultados": "",
+    "propostas": {
+      "retrato": {
+        "texto": "",
+        "porque": ""
+      },
+      "circulo": {
+        "texto": "",
+        "porque": ""
+      },
+      "valor": {
+        "texto": "",
+        "porque": ""
+      },
+      "tese": {
+        "texto": "",
+        "porque": ""
+      },
+      "lacunas": {
+        "texto": "",
+        "porque": ""
+      },
+      "direcao": {
+        "texto": "",
+        "porque": ""
+      },
+      "posicionamento": {
+        "texto": "",
+        "porque": ""
+      },
+      "territorios": {
+        "texto": "",
+        "porque": ""
+      },
+      "editorial": {
+        "texto": "",
+        "porque": ""
+      },
+      "trafego": {
+        "texto": "",
+        "porque": ""
+      },
+      "plano90": {
+        "texto": "",
+        "porque": ""
+      }
+    },
+    "copyPronta": {
+      "formato": "",
+      "tema": "",
+      "blocos": [
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        ""
+      ]
+    },
+    "pecas": {
+      "Bio e perfil": "",
+      "Stories": "",
+      "Reels": "",
+      "Vídeo longo": "",
+      "VSL": "",
+      "WhatsApp": "",
+      "Página ou site": ""
+    },
+    "anuncios": {
+      "topo": "",
+      "meio": "",
+      "fundo": ""
+    },
+    "guerrilha": [
+      {
+        "titulo": "",
+        "acao": "",
+        "reels": ""
+      }
+    ]
+  }
+}
