@@ -1,5 +1,5 @@
 <?php
-// Pincelada Anatômica · portal do cliente (modelo fixo + dados do cliente)
+// Método TA · portal do cliente (modelo fixo + dados do cliente)
 require __DIR__ . '/lib.php';
 aplicar_atualizacoes();
 

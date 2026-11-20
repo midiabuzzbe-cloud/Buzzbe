@@ -1,5 +1,5 @@
 <?php
-// Pincelada Anatômica · funções comuns do portal
+// Método TA · funções comuns do portal
 const DIR_DADOS = __DIR__ . '/dados';
 
 function ler(string $arquivo, $padrao = null) {

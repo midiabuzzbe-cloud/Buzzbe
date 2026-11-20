@@ -1,5 +1,5 @@
 <?php
-// Pincelada Anatômica · Painel do Mentor
+// Método TA · Painel do Mentor
 header('Content-Type: text/html; charset=utf-8');
 header('X-Robots-Tag: noindex, nofollow');
 header('Cache-Control: no-store');
@@ -8,7 +8,7 @@ header('Cache-Control: no-store');
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Pincelada Anatômica — Painel do Mentor</title>
+<title>Método TA — Painel do Mentor</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=DM+Sans:wght@400;500;700&display=swap">
 <style>
   :root { --escuro:#17181D; --claro:#F6F3EE; --claro2:#ECE6DC; --destaque:#B8894A; --dt:#835C28; --texto:#4A4A52; --linha:#D9D1C3; --branco:#FCFBF8; }
@@ -61,7 +61,7 @@ header('Cache-Control: no-store');
 </head>
 <body>
 <header><div class="in">
-  <div><div class="eyebrow">Pincelada Anatômica · Painel do Mentor</div><h1 id="tit">Seus clientes</h1></div>
+  <div><div class="eyebrow">Método TA · Painel do Mentor</div><h1 id="tit">Seus clientes</h1></div>
   <div id="topo-acoes"></div>
 </div></header>
 <main><div class="in" id="app"></div></main>

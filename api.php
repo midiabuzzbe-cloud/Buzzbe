@@ -1,5 +1,5 @@
 <?php
-// Pincelada Anatômica · API do portal e do painel
+// Método TA · API do portal e do painel
 require __DIR__ . '/lib.php';
 aplicar_atualizacoes();
 
