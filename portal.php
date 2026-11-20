@@ -1,6 +1,7 @@
 <?php
 // Pincelada Anatômica · portal do cliente (modelo fixo + dados do cliente)
 require __DIR__ . '/lib.php';
+aplicar_atualizacoes();
 
 $t = $_GET['t'] ?? '';
 $slug = token_ok($t) ? cliente_por_token($t) : null;

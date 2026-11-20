@@ -1,6 +1,7 @@
 <?php
 // Pincelada Anatômica · API do portal e do painel
 require __DIR__ . '/lib.php';
+aplicar_atualizacoes();
 
 $a = $_GET['a'] ?? '';
 $post = $_SERVER['REQUEST_METHOD'] === 'POST';

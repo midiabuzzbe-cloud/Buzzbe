@@ -168,10 +168,58 @@ header('Cache-Control: no-store');
     return [el('label', { class: 'l' }, rot(k, pai)), i];
   }
   function editor(dados) {
-    return Object.keys(dados).map((k, i) => el('details', { class: 'sec', open: i === 0 ? '' : null }, el('summary', {}, SECOES[k] || rot(k)),
+    return Object.keys(dados).filter(k => k !== 'briefing').map((k, i) => el('details', { class: 'sec', open: i === 0 ? '' : null }, el('summary', {}, SECOES[k] || rot(k)),
       el('div', { class: 'corpo' }, (dados[k] && typeof dados[k] === 'object' && !Array.isArray(dados[k])) ? Object.keys(dados[k]).map(kk => campo(dados[k], kk, k)) : campo(dados, k))));
   }
 
+
+  /* ---------- editor de briefing ---------- */
+  const BRIEFING_PADRAO = [["Sobre você", ["Conte sua história em poucas linhas: de onde veio, como chegou até aqui e em que fase da vida sente que está hoje.", "O que as pessoas mais elogiam em você, e em que situações costumam te procurar?", "O que você faz com facilidade e que os outros acham difícil?", "Quando pensa em crescer, cobrar mais ou aparecer, o que passa pela sua cabeça? O que você evita fazer, mesmo sabendo que deveria?", "Qual foi a maior dificuldade que você já superou, e o que ela te ensinou?", "Daqui a 3 anos, como seria a sua vida ideal, pessoal e profissional?"]], ["O seu negócio", ["Nome da empresa, cidade e bairro, há quanto tempo existe e por que você a abriu.", {"produtos": "Seus principais produtos, com o preço de cada um. Qual vende mais, qual dá mais lucro e quantos itens você tem no total?", "servicos": "Seus principais serviços, como cada um é entregue, o preço e o tempo que leva. Qual é o mais procurado e qual dá mais lucro?"}, {"produtos": "Faturamento mensal médio (aproximado), valor médio por venda e meta para os próximos 12 meses.", "servicos": "Faturamento mensal médio (aproximado), quantos atendimentos você consegue fazer por mês e meta para os próximos 12 meses."}, "Quem trabalha com você, e quem cuida do marketing hoje?", "Por que os clientes compram de você e não do concorrente? Que provas você tem (depoimentos, avaliações, antes e depois)?", "Quais são os meses mais fortes e os mais fracos do ano?"]], ["Clientes e vendas", ["Descreva o seu melhor cliente e o problema ou desejo que leva ele até você.", "Quais dúvidas e objeções você mais escuta, e por que alguns desistem de comprar?", {"produtos": "Como os clientes chegam até você hoje (loja, site, WhatsApp, marketplace)? Quantos contatos recebe por mês, e quantos compram?", "servicos": "Como os clientes chegam até você hoje? Quantos pedem orçamento ou agendam por mês, e quantos fecham?"}]], ["Marketing e mercado", ["Quais canais você usa hoje (Instagram, Google, site, WhatsApp, outros)? Informe @ e links. Você aparece nos conteúdos?", "Já fez anúncios pagos? Quanto investiu, quem gerenciou e qual foi o resultado?", "Quem são os seus 3 principais concorrentes (@ ou site), e o que eles fazem bem ou mal?"]], ["Compromisso", ["Quantas horas por semana você consegue dedicar à mentoria, e quanto pode investir por mês em anúncios?", "Qual resultado, ao fim dos 2 meses, faria você dizer que a mentoria valeu a pena?"]]];
+  function briefingPadrao(tipo) {
+    let o = 0;
+    return BRIEFING_PADRAO.map(([parte, qs]) => ({ parte, itens: qs.map(q => { o++; return { id: 'b' + o, q: typeof q === 'string' ? q : (q[tipo] || q.produtos) }; }) }));
+  }
+  const novoId = () => 'n' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  function editorBriefing(d) {
+    d.briefing = d.briefing || {};
+    if (!Array.isArray(d.briefing.perguntas) || !d.briefing.perguntas.length) {
+      const base = briefingPadrao(d.cliente.tipo);
+      const rem = (d.briefing.remover || []).map(Number);
+      base.forEach(p => { p.itens = p.itens.filter(x => !rem.includes(Number(x.id.slice(1)))); });
+      const ex = (d.briefing.extras || []).filter(q => (q || '').trim());
+      if (ex.length) base.push({ parte: 'Perguntas do seu negócio', itens: ex.map(q => ({ id: novoId(), q })) });
+      d.briefing.perguntas = base;
+    }
+    const P = d.briefing.perguntas;
+    const caixa = el('div', { class: 'caixa' });
+    const conta = el('p', { class: 'msg' });
+    const total = () => P.reduce((t, p) => t + p.itens.length, 0);
+    function desenha() {
+      const n = total();
+      conta.className = n > 20 ? 'erro' : 'msg';
+      conta.textContent = n + ' perguntas' + (n > 20 ? ' (o ideal é no máximo 20)' : '');
+      let num = 0;
+      caixa.replaceChildren(
+        el('h2', {}, 'Briefing deste cliente'),
+        el('p', { class: 'msg' }, 'Reescreva, apague ou acrescente perguntas. As mudanças valem só para este cliente. Depois clique em "Salvar alterações".'),
+        conta,
+        P.map((p, pi) => el('fieldset', {},
+          el('legend', {}, 'Parte ' + (pi + 1)),
+          (() => { const t = el('input', { type: 'text', 'aria-label': 'Nome da parte' }); t.value = p.parte; t.addEventListener('input', () => { p.parte = t.value; }); return [el('label', { class: 'l' }, 'Nome da parte'), t]; })(),
+          p.itens.map((it, ii) => { num++; const t = el('textarea', { rows: '2', 'aria-label': 'Pergunta ' + num }); t.value = it.q; t.addEventListener('input', () => { it.q = t.value; });
+            return el('div', {}, el('label', { class: 'l' }, 'Pergunta ' + num), el('div', { class: 'item' }, t,
+              el('div', { style: 'display:flex;flex-direction:column;gap:4px' },
+                el('button', { class: 'btn sec mini', type: 'button', 'aria-label': 'Subir pergunta', onclick: () => { if (ii > 0) { [p.itens[ii - 1], p.itens[ii]] = [p.itens[ii], p.itens[ii - 1]]; desenha(); } } }, '↑'),
+                el('button', { class: 'btn sec mini', type: 'button', 'aria-label': 'Descer pergunta', onclick: () => { if (ii < p.itens.length - 1) { [p.itens[ii + 1], p.itens[ii]] = [p.itens[ii], p.itens[ii + 1]]; desenha(); } } }, '↓'),
+                el('button', { class: 'btn sec mini', type: 'button', onclick: () => { p.itens.splice(ii, 1); desenha(); } }, 'Apagar')))); }),
+          el('p', {}, el('button', { class: 'btn sec mini', type: 'button', onclick: () => { p.itens.push({ id: novoId(), q: '' }); desenha(); } }, '+ Pergunta nesta parte'), ' ',
+            p.itens.length ? '' : el('button', { class: 'btn sec mini', type: 'button', onclick: () => { P.splice(pi, 1); desenha(); } }, 'Apagar parte')))),
+        el('p', {}, el('button', { class: 'btn sec mini', type: 'button', onclick: () => { P.push({ parte: 'Nova parte', itens: [{ id: novoId(), q: '' }] }); desenha(); } }, '+ Nova parte'), ' ',
+          el('button', { class: 'btn sec mini', type: 'button', onclick: () => { P.splice(0, P.length, ...briefingPadrao(d.cliente.tipo)); d.briefing.extras = []; d.briefing.remover = []; desenha(); } }, 'Voltar ao briefing padrão')));
+    }
+    desenha();
+    return caixa;
+  }
   async function telaCliente(slug) {
     let r; try { r = await api('ver', null, '&slug=' + encodeURIComponent(slug)); } catch (x) { return lista(); }
     const d = r.dados; titulo(d.cliente.empresa || d.cliente.mentorado);
@@ -185,6 +233,7 @@ header('Cache-Control: no-store');
         el('p', { class: 'msg' }, nresp + ' respostas preenchidas' + (r.respostas.atualizado ? ' · última em ' + new Date(r.respostas.atualizado).toLocaleString('pt-BR') : '')),
         el('div', { class: 'link' }, el('code', {}, link), copiar, el('a', { class: 'btn mini', href: link, target: '_blank', rel: 'noopener' }, 'Abrir portal'), el('a', { class: 'btn ouro mini', href: link + '#resumo', target: '_blank', rel: 'noopener' }, 'Ver respostas')),
         el('p', { class: 'msg' }, 'Envie este link para o cliente. Ele é único e dá acesso só ao portal dele.')),
+      editorBriefing(d),
       el('h2', { style: 'margin-top:28px' }, 'Conteúdo deste cliente'),
       el('p', { class: 'msg' }, 'O que você escrever aqui aparece só no portal deste cliente.'),
       ...editor(d),
