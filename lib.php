@@ -71,15 +71,23 @@ function mentor_logado(): bool { sessao(); return !empty($_SESSION['mentor']); }
 
 // ---------- canal de atualizações (o mentor pede, o Claude envia criptografado pelo repositório) ----------
 function chave_par(): string {
-    $p = DIR_DADOS . '/chave.json';
-    if (is_file($p)) {
-        $j = json_decode((string) file_get_contents($p), true);
-        if (!empty($j['par'])) return base64_decode($j['par']);
-    }
-    $par = sodium_crypto_box_keypair();
-    gravar('chave.json', ['par' => base64_encode($par)]);
-    file_put_contents(DIR_DADOS . '/chave-publica.txt', base64_encode(sodium_crypto_box_publickey($par)));
-    return $par;
+    // devolve a chave privada (PEM); cria o par RSA na primeira vez
+    $j = ler('chave.json');
+    if (is_array($j) && !empty($j['privada'])) return $j['privada'];
+    $res = openssl_pkey_new(['private_key_bits' => 2048, 'private_key_type' => OPENSSL_KEYTYPE_RSA]);
+    if ($res === false) throw new \RuntimeException('openssl_pkey_new falhou');
+    openssl_pkey_export($res, $priv);
+    $pub = openssl_pkey_get_details($res)['key'];
+    gravar('chave.json', ['privada' => $priv]);
+    file_put_contents(DIR_DADOS . '/chave-publica.txt', $pub);
+    return $priv;
+}
+
+function decifrar(string $texto, string $priv) {
+    $e = json_decode($texto, true);
+    if (!is_array($e) || empty($e['k'])) return false;
+    if (!openssl_private_decrypt((string) base64_decode($e['k']), $aes, $priv, OPENSSL_PKCS1_OAEP_PADDING)) return false;
+    return openssl_decrypt((string) base64_decode($e['c']), 'aes-256-gcm', $aes, OPENSSL_RAW_DATA, (string) base64_decode($e['iv']), (string) base64_decode($e['t']));
 }
 
 function mesclar(array $base, array $novo): array {
@@ -96,7 +104,7 @@ function aplicar_atualizacoes(): void {
     if ($feito) return;
     $feito = true;
     try { aplicar_atualizacoes_interno(); }
-    catch (\Throwable $e) { @file_put_contents(DIR_DADOS . '/canal-erro.txt', date('c') . ' ' . $e->getMessage() . ' em ' . basename($e->getFile()) . ':' . $e->getLine() . "\nPHP " . PHP_VERSION . ' sodium=' . (function_exists('sodium_crypto_box_keypair') ? 'sim' : 'nao') . "\n"); }
+    catch (\Throwable $e) { @file_put_contents(DIR_DADOS . '/canal-erro.txt', date('c') . ' ' . $e->getMessage() . ' em ' . basename($e->getFile()) . ':' . $e->getLine() . "\nPHP " . PHP_VERSION . ' openssl=' . (function_exists('openssl_pkey_new') ? 'sim' : 'nao') . "\n"); }
 }
 
 function aplicar_atualizacoes_interno(): void {
@@ -108,7 +116,7 @@ function aplicar_atualizacoes_interno(): void {
     foreach ($arquivos as $arq) {
         $nome = basename($arq);
         if (isset($aplicadas[$nome])) continue;
-        $claro = sodium_crypto_box_seal_open((string) base64_decode(trim((string) file_get_contents($arq))), $par);
+        $claro = decifrar(trim((string) file_get_contents($arq)), $par);
         if ($claro === false) { $aplicadas[$nome] = 'ignorada: outra chave'; continue; }
         $u = json_decode($claro, true);
         if (!is_array($u)) { $aplicadas[$nome] = 'ignorada: inválida'; continue; }

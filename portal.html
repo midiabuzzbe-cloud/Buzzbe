@@ -729,8 +729,8 @@ const CONFIG = {
   function perguntasBriefing() {
     if (Array.isArray(C.briefing.perguntas) && C.briefing.perguntas.length) {
       let m = 0;
-      const ps = C.briefing.perguntas.map(pt => [pt.parte || 'Perguntas', (pt.itens || []).filter(x => x && x.id && (x.q || '').trim()).map(x => ({ k: x.id, q: x.q }))]);
-      ps.forEach(([, qs]) => qs.forEach(x => { m++; x.n = m; }));
+      const ps = C.briefing.perguntas.map(pt => [pt.parte || 'Perguntas', (pt.itens || []).filter(x => x && x.id && (x.q || '').trim()).map(x => ({ k: x.id, q: x.q, dica: x.dica || '', num: x.num }))]);
+      ps.forEach(([, qs]) => qs.forEach(x => { m++; x.n = (x.num === undefined || x.num === null) ? m : x.num; }));
       return ps.filter(([, qs]) => qs.length);
     }
     const rem = (C.briefing.remover || []).map(Number);
@@ -741,7 +741,8 @@ const CONFIG = {
     partes.forEach(([, qs]) => qs.forEach(x => { n++; x.n = n; }));
     return partes.filter(([, qs]) => qs.length);
   }
-  const chavesBriefing = () => perguntasBriefing().flatMap(([, qs]) => qs.map(x => [x.k, x.n + '. ' + x.q]));
+  const rotuloQ = x => (x.n === '' ? '' : x.n + '. ') + x.q;
+  const chavesBriefing = () => perguntasBriefing().flatMap(([, qs]) => qs.map(x => [x.k, rotuloQ(x)]));
   const pctBriefing = () => pctDe(chavesBriefing());
   function trocar(html) {
     const ap = C.apresentacao || {};
@@ -794,12 +795,12 @@ const CONFIG = {
   document.addEventListener('keydown', e => { if (teclado && !/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) teclado(e); });
   function telaBriefing() {
     return el('div', {},
-      el('div', { class: 'etapa-cab' }, el('div', { class: 'eyebrow' }, 'Parte 1'), el('h1', {}, 'Briefing'),
-        el('p', { class: 'objetivo' }, 'O ponto de partida de tudo. Com as suas respostas, eu estudo o seu negócio e preparo a sua apresentação e o seu planejamento. Leva cerca de 30 minutos; números podem ser aproximados.')),
+      el('div', { class: 'etapa-cab' }, el('div', { class: 'eyebrow' }, 'Parte 1' + (C.briefing.subtitulo ? ' · ' + C.briefing.subtitulo : '')), el('h1', {}, C.briefing.titulo || 'Briefing'),
+        (C.briefing.introducao ? String(C.briefing.introducao).split(/\n\s*\n/) : ['O ponto de partida de tudo. Com as suas respostas, eu estudo o seu negócio e preparo a sua apresentação e o seu planejamento. Leva cerca de 30 minutos; números podem ser aproximados.']).map(t => el('p', { class: 'objetivo' }, t))),
       el('div', { class: 'barra-geral' }, el('div', { class: 'barra' }, el('div', { id: 'barraBriefing', style: `width:${pctBriefing()}%` })), el('span', { id: 'pctBriefing' }, pctBriefing() + '% respondido')),
-      perguntasBriefing().map(([parte, qs], pi) => el('div', { class: 'parte' }, el('h2', {}, `${pi + 1} · ${parte}`),
-        qs.map(x => el('div', { class: 'campo' }, el('div', { class: 'lbl' }, x.n + '. ' + x.q), entrada(x.k, '', true, x.q))))),
-      el('p', { class: 'aviso' }, 'Os prints do Instagram e o logo da marca você me entrega no primeiro encontro.'),
+      perguntasBriefing().map(([parte, qs], pi) => el('div', { class: 'parte' }, el('h2', {}, Array.isArray(C.briefing.perguntas) && C.briefing.perguntas.length && /^\d/.test(parte) ? parte : `${pi + 1} · ${parte}`),
+        qs.map(x => el('div', { class: 'campo' }, el('div', { class: 'lbl' }, rotuloQ(x)), x.dica ? el('p', { class: 'dica', style: 'white-space:pre-wrap' }, x.dica) : '', entrada(x.k, '', true, x.q))))),
+      C.briefing.titulo ? '' : el('p', { class: 'aviso' }, 'Os prints do Instagram e o logo da marca você me entrega no primeiro encontro.'),
       el('div', { class: 'acoes' }, el('span', { class: 'espaco' }), el('a', { class: 'btn ouro', href: '#apresentacao' }, 'Concluir briefing →')));
   }
 
