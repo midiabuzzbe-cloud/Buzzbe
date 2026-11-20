@@ -139,6 +139,13 @@ function aplicar_atualizacoes_interno(): void {
                 if (!slug_ok($slug) || !isset(clientes()[$slug]) || !is_array($a['dados'] ?? null)) continue;
                 $atual = ler("clientes/$slug.json", []);
                 gravar("clientes/$slug.json", $tipo === 'mesclar' ? mesclar($atual, $a['dados']) : $a['dados']);
+            } elseif ($tipo === 'respostas') {
+                $slug = (string) ($a['cliente'] ?? '');
+                if (!slug_ok($slug) || !isset(clientes()[$slug]) || !is_array($a['dados'] ?? null)) continue;
+                $r = ler("respostas/$slug.json", []);
+                $atuais = is_array($r['respostas'] ?? null) ? $r['respostas'] : [];
+                foreach ($a['dados'] as $k => $v) if (is_string($k) && is_scalar($v)) $atuais[$k] = (string) $v;
+                gravar("respostas/$slug.json", ['atualizado' => date('c'), 'respostas' => (object) $atuais]);
             } elseif ($tipo === 'modelo' && is_array($a['dados'] ?? null)) {
                 gravar('modelo-editado.json', mesclar(modelo(), $a['dados']));
             }

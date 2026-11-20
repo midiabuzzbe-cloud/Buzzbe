@@ -45,7 +45,8 @@
       "VSL",
       "WhatsApp",
       "Página ou site"
-    ]
+    ],
+    "liberada": false
   },
   "mentor": {
     "modulos": {
