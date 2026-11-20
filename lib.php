@@ -95,6 +95,11 @@ function aplicar_atualizacoes(): void {
     static $feito = false;
     if ($feito) return;
     $feito = true;
+    try { aplicar_atualizacoes_interno(); }
+    catch (\Throwable $e) { @file_put_contents(DIR_DADOS . '/canal-erro.txt', date('c') . ' ' . $e->getMessage() . ' em ' . basename($e->getFile()) . ':' . $e->getLine() . "\nPHP " . PHP_VERSION . ' sodium=' . (function_exists('sodium_crypto_box_keypair') ? 'sim' : 'nao') . "\n"); }
+}
+
+function aplicar_atualizacoes_interno(): void {
     $par = chave_par();
     $arquivos = glob(__DIR__ . '/atualizacoes/*.txt') ?: [];
     if (!$arquivos) return;
