@@ -283,6 +283,8 @@ const CONFIG = {
 <script>
 (function () {
   const C = CONFIG;
+  if (window.MENTOR) { C.apresentacao = Object.assign({}, C.apresentacao, { liberada: true }); C.aplicacao = Object.assign({}, C.aplicacao, { liberada: true });
+    setTimeout(() => { const f = document.createElement('div'); f.textContent = 'Prévia do mentor: você vê tudo liberado. O cliente só vê o que você liberar.'; f.style.cssText = 'position:fixed;left:50%;bottom:16px;transform:translateX(-50%);background:#17181D;color:#fff;padding:10px 18px;border-radius:999px;font:600 13px DM Sans,Arial,sans-serif;z-index:99;box-shadow:0 4px 16px rgba(0,0,0,.25)'; document.body.append(f); }, 0); }
   const r = document.documentElement.style;
   r.setProperty('--escuro', C.cores.escuro); r.setProperty('--claro', C.cores.claro);
   r.setProperty('--claro2', C.cores.claro2); r.setProperty('--destaque', C.cores.destaque);

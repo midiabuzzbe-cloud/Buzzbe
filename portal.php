@@ -15,6 +15,6 @@ if (!$slug) {
 $d = ler("clientes/$slug.json", []);
 $r = ler("respostas/$slug.json", ['respostas' => []])['respostas'] ?? [];
 $f = JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT;
-$inj = '<script>window.DADOS=' . json_encode($d, $f) . ';window.RESPOSTAS=' . json_encode((object) $r, $f) . ';window.TOKEN=' . json_encode($t, $f) . ';</script>';
+$inj = '<script>window.DADOS=' . json_encode($d, $f) . ';window.RESPOSTAS=' . json_encode((object) $r, $f) . ';window.TOKEN=' . json_encode($t, $f) . ';window.MENTOR=' . (mentor_logado() ? 'true' : 'false') . ';</script>';
 header('Content-Type: text/html; charset=utf-8');
 echo str_replace('<!--DADOS-->', $inj, (string) file_get_contents(__DIR__ . '/portal.html'));
