@@ -15,7 +15,7 @@ const CONFIG = {
   cores: (D.cliente || {}).cores || { escuro: '#17181D', claro: '#F6F3EE', claro2: '#ECE6DC', destaque: '#B8894A', destaqueTexto: '#835C28' },
   endpoint: D.endpoint || '',
   perspectivas: (D.aplicacao || {}).caminhos || [], formatos: (D.aplicacao || {}).formatos || [],
-  doMentor: D.mentor || {}, briefing: D.briefing || { extras: [], remover: [] }, apresentacao: D.apresentacao || { liberada: false }
+  doMentor: D.mentor || {}, briefing: D.briefing || { extras: [], remover: [] }, apresentacao: D.apresentacao || { liberada: false }, aplicacao: D.aplicacao || { liberada: false }
 };
 </script>
 <style>
@@ -101,6 +101,20 @@ const CONFIG = {
   .linha-card input, .linha-card textarea { background:var(--branco); }
   .linha-card textarea { min-height:60px; }
   .linha-card .n { grid-column:1 / -1; font-weight:700; font-size:14px; }
+  .preparo { border:1px solid var(--linha, #e5dccd); border-radius:16px; padding:26px 28px; background:var(--branco); margin-top:18px; }
+  .preparo .status { display:inline-flex; align-items:center; gap:10px; font-weight:600; font-size:15px; margin-bottom:18px; }
+  .preparo .pulso { width:10px; height:10px; border-radius:50%; background:var(--ouro, #b8892d); animation:pulso 1.4s ease-in-out infinite; }
+  @keyframes pulso { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:.35; transform:scale(.7); } }
+  .preparo ol { list-style:none; margin:0; padding:0; }
+  .preparo li { display:flex; gap:14px; align-items:flex-start; padding:12px 0; border-top:1px solid var(--linha, #eee6d8); font-size:15px; }
+  .preparo li:first-child { border-top:0; }
+  .preparo .ic { flex:0 0 26px; height:26px; border-radius:50%; display:grid; place-items:center; font-size:13px; font-weight:700; border:1.5px solid #cbbfa9; color:#8a7d66; }
+  .preparo li.feito .ic { background:var(--escuro); border-color:var(--escuro); color:#fff; }
+  .preparo li.agora .ic { border-color:var(--ouro, #b8892d); color:var(--ouro, #b8892d); }
+  .preparo li.agora b { color:var(--escuro); }
+  .preparo li span small { display:block; color:#7a705f; font-size:13.5px; margin-top:2px; }
+  .preparo .msg { margin-top:16px; padding:14px 16px; border-radius:12px; background:var(--claro, #f4efe6); font-size:14.5px; }
+  @media (prefers-reduced-motion: reduce) { .preparo .pulso { animation:none; } }
   .mentor { border:1px dashed var(--escuro); border-radius:12px; padding:14px 18px; background:var(--branco); }
   .mentor ul { margin:6px 0 0; padding-left:20px; }
   .mentor li { margin-bottom:4px; font-size:14.5px; }
@@ -755,13 +769,29 @@ const CONFIG = {
       .split('{{encontros}}').join(ap.encontros || 'Encontros de acompanhamento').split('{{horas}}').join(ap.horas || 'Horas semanais de dedicação')
       .split('{{caminhos}}').join(C.perspectivas.join(', '));
   }
+  function preparo(parte, titulo, texto, status, passos, msg, botao) {
+    // passos: [[titulo, detalhe, estado]] com estado 'feito' | 'agora' | ''
+    return el('div', {},
+      el('div', { class: 'etapa-cab' }, el('div', { class: 'eyebrow' }, parte), el('h1', {}, titulo), el('p', { class: 'objetivo' }, texto)),
+      el('div', { class: 'preparo' },
+        el('div', { class: 'status' }, el('span', { class: 'pulso', 'aria-hidden': 'true' }), status),
+        el('ol', {}, passos.map(([t, d, e], i) => el('li', { class: e }, el('span', { class: 'ic' }, e === 'feito' ? '✓' : String(i + 1)), el('span', {}, el('b', {}, t), d ? el('small', {}, d) : '')))),
+        el('div', { class: 'msg' }, msg)),
+      botao || '');
+  }
   let slideAtual = 0;
   function telaApresentacao() {
-    if (!C.apresentacao.liberada) return el('div', {},
-      el('div', { class: 'etapa-cab' }, el('div', { class: 'eyebrow' }, 'Parte 2'), el('h1', {}, 'Sua apresentação'),
-        el('p', { class: 'objetivo' }, 'Ela é montada a partir do seu briefing: com as suas respostas, eu estudo o seu negócio e preparo a apresentação do que vamos construir. Ela aparece aqui assim que estiver pronta.')),
-      el('div', { class: 'mentor' }, el('div', { class: 'lbl' }, pctBriefing() < 100 ? 'Primeiro passo: responder o briefing' : 'Briefing recebido. Sua apresentação está em preparação.', badge('M'))),
-      pctBriefing() < 100 ? el('div', { class: 'acoes' }, el('a', { class: 'btn ouro', href: '#briefing' }, 'Responder o briefing →')) : '');
+    if (!C.apresentacao.liberada) {
+      const ok = pctBriefing() >= 100;
+      return preparo('Parte 2', 'Sua apresentação', 'A apresentação e o planejamento estratégico são criados só para você, a partir das respostas do seu briefing.',
+        ok ? 'Mentor criando sua apresentação e seu planejamento estratégico' : 'Aguardando o seu briefing',
+        [['Briefing respondido', ok ? 'Recebido. Obrigado pelas respostas.' : 'Responda todas as perguntas para o mentor começar.', ok ? 'feito' : 'agora'],
+         ['Mentor estudando suas respostas', 'Leitura da sua trajetória, do seu negócio e do seu público.', ok ? 'feito' : ''],
+         ['Mentor criando a apresentação e o planejamento estratégico', 'Posicionamento, caminhos e direção pensados para o seu caso.', ok ? 'agora' : ''],
+         ['Apresentação liberada para você', 'Ela aparece aqui, nesta aba.', '']],
+        ok ? 'Você receberá uma mensagem assim que a sua apresentação estiver pronta.' : 'Assim que o briefing estiver completo, o mentor começa a preparar a sua apresentação.',
+        ok ? '' : el('div', { class: 'acoes' }, el('a', { class: 'btn ouro', href: '#briefing' }, 'Responder o briefing →')));
+    }
     const inner = el('div', { class: 'palco-in' });
     const palco = el('div', { class: 'palco', role: 'region', 'aria-label': 'Apresentação da mentoria' }, inner);
     const cont = el('span', { class: 'contador' });
@@ -814,10 +844,21 @@ const CONFIG = {
       el('div', { class: 'portal-cards' },
         el('a', { class: 'pcard', href: '#briefing' }, el('span', { class: 'n' }, '1'), el('h3', {}, 'Briefing'), el('p', {}, 'As perguntas que dão início a tudo. Comece por aqui.'), el('span', { class: 'pct' }, pctBriefing() + '% respondido')),
         el('a', { class: 'pcard', href: '#apresentacao' }, el('span', { class: 'n' }, '2'), el('h3', {}, 'Apresentação'), el('p', {}, 'O que vamos construir para você, montado a partir do seu briefing.'), el('span', { class: 'pct' }, C.apresentacao.liberada ? 'Disponível' : 'Em preparação')),
-        el('a', { class: 'pcard', href: '#etapa-1' }, el('span', { class: 'n' }, '3'), el('h3', {}, 'Aplicação'), el('p', {}, 'As fichas de cada etapa, preenchidas ao longo dos 2 meses.'), el('span', { class: 'pct' }, pa + '% preenchido'))),
+        el('a', { class: 'pcard', href: '#etapa-1' }, el('span', { class: 'n' }, '3'), el('h3', {}, 'Aplicação'), el('p', {}, 'As fichas de cada etapa, preenchidas ao longo dos 2 meses.'), el('span', { class: 'pct' }, C.aplicacao.liberada ? pa + '% preenchido' : 'Em preparação'))),
       el('div', { class: 'legenda' }, 'Na aplicação, cada campo mostra quem preenche:', badge('P'), badge('J'), badge('M')));
   }
+  function telaAplicacaoTrancada() {
+    const ap = !!C.apresentacao.liberada;
+    return preparo('Parte 3', 'Sua aplicação', 'As fichas das 7 etapas chegam com a parte do mentor já feita: propostas de posicionamento, copy pronta, exemplos de peças e anúncios, tudo adequado ao seu negócio.',
+      ap ? 'Mentor preenchendo e adequando a aplicação aos seus dados' : 'Liberada depois da apresentação',
+      [['Briefing respondido', '', pctBriefing() >= 100 ? 'feito' : ''],
+       ['Apresentação e planejamento estratégico', ap ? 'Liberados.' : 'Em preparação pelo mentor.', ap ? 'feito' : 'agora'],
+       ['Mentor preenchendo as fichas e adequando aos seus dados', 'Propostas com o “por que eu indico”, copy, exemplos e anúncios.', ap ? 'agora' : ''],
+       ['Aplicação liberada para você', 'Você revisa, aprova ou pede ajustes, e preenche a sua parte.', '']],
+      'Você receberá uma mensagem assim que a sua aplicação estiver pronta.');
+  }
   function telaEtapa(s) {
+    if (!C.aplicacao.liberada) return telaAplicacaoTrancada();
     const i = STAGES.indexOf(s);
     return el('div', {},
       el('div', { class: 'etapa-cab' },
@@ -865,7 +906,7 @@ const CONFIG = {
     main.replaceChildren(s ? telaEtapa(s) : telas[atual]());
     const aba = s || atual === 'resumo' ? 'aplicacao' : atual;
     document.querySelectorAll('.aba').forEach(a => a.classList.toggle('on', a.getAttribute('data-aba') === aba));
-    document.querySelector('nav.fluxo').hidden = aba !== 'aplicacao';
+    document.querySelector('nav.fluxo').hidden = aba !== 'aplicacao' || !C.aplicacao.liberada;
     renderFluxo();
     const ativo = document.querySelector('.no.ativa'); if (ativo) ativo.scrollIntoView({ block: 'nearest', inline: 'center' });
     window.scrollTo(0, 0);
